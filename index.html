@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlist Length Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <meta name="description" content="Calculate the total duration of any YouTube playlist instantly. See how long it takes to watch at 1.25x, 1.5x, 2x speeds. Free tool for students.">
+    <meta name="keywords" content="youtube playlist length calculator, youtube duration, playlist time, study tool, playlist timer, youtube süre hesaplayıcı">
+    <meta name="author" content="Senin Adın">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:title" content="YouTube Playlist Length Calculator">
+    <meta property="og:description" content="Wondering how long that playlist is? Calculate total duration and custom speeds instantly.">
+    <meta property="og:image" content="http://vectips.com/tips-and-tricks/calculator-app-icon/"> <meta property="og:url" content="https://ekincimustafa.github.io/playlist-calculator/">
+    <meta property="og:type" content="website">
+
+    <meta name="google-site-verification" content="Lp6gpSLiQIL_PHr3QAKE7cXTQIEGEMHMjhuVqjvnlJU" />
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SENIN-KODUN"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-T80R2B9N13');
+    </script>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>▶️</text></svg>">
+</head>
+<body>
+
+    <div class="main-wrapper" id="mainWrapper">
+        
+        <div class="input-section">
+            <header>
+                <h1><span class="highlight">Play</span>list Length Calculator</h1>
+                <div class="separator"></div>
+                <p>Find out the total length of any YouTube playlist instantly.</p>
+            </header>
+
+            <div class="card input-card">
+                <div class="input-group">
+                    <input type="text" id="playlistUrl" placeholder="Paste YouTube playlist link here..." autocomplete="off">
+                </div>
+
+                <div class="speed-control">
+                    <div class="label-row">
+                        <label for="speedRange">Playback Speed</label>
+                        <span id="speedValue" class="speed-badge">1.00x</span>
+                    </div>
+                    
+                    <div class="range-wrapper">
+                        <input type="range" id="speedRange" min="1" max="5" step="0.25" value="1">
+                        
+                        <div class="ticks">
+                            <span style="left: 0%">1x</span>
+                            
+                            <span style="left: calc(25% + 6px)">2x</span>
+                            
+                            <span style="left: 50%">3x</span>
+                            
+                            <span style="left: calc(75% - 6px)">4x</span>
+                            
+                            <span style="left: 100%">5x</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="calcBtn">Calculate Duration</button>
+            </div>
+        </div>
+
+        <div id="resultSection" class="result-section hidden">
+            
+            <div class="video-card">
+                <div id="videoPlayer" class="player-container"></div>
+            </div>
+
+            <div class="result-card">
+                <h2>Total Duration</h2>
+                <div class="time-box">
+                    <span id="hours">00</span>h 
+                    <span id="minutes">00</span>m 
+                    <span id="seconds">00</span>s
+                </div>
+                
+                <div class="meta-info">
+                    <p class="video-count">Videos: <span id="videoCount">--</span></p>
+                    <div class="vertical-line"></div> 
+                    <p class="avg-time">Avg: <span id="avgVideo">--</span></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+/* Temel Ayarlar */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Dikey ortalama */
+    color: #212529;
+    padding: 20px;
+}
+
+/* Ana Taşıyıcı: Varsayılan olarak ortada tek sütun */
+.main-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px; /* Başlangıç genişliği */
+    transition: max-width 0.5s ease; /* Genişleme animasyonu */
+}
+
+/* --- DURUM: SONUÇLAR GELDİĞİNDE (Layout Değişimi) --- */
+.main-wrapper.expanded {
+    max-width: 1100px; /* Genişle */
+    flex-direction: row; /* Yan yana diz */
+    align-items: flex-start; /* Yukarı hizala */
+    gap: 40px; /* İki sütun arası boşluk */
+}
+
+.main-wrapper.expanded .input-section {
+    flex: 1; /* Sol taraf */
+}
+.main-wrapper.expanded .result-section {
+    display: flex; /* Görünür yap */
+    flex: 1; /* Sağ taraf */
+}
+
+/* --- SOL TARAF (Input) --- */
+.input-section {
+    width: 100%;
+    text-align: center;
+    transition: all 0.5s ease;
+}
+
+header h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; color: #000; }
+.separator { width: 100px; height: 4px; background-color: #000; margin: 0 auto 20px auto; border-radius: 2px; }
+header p { color: #6c757d; margin-bottom: 30px; }
+
+.card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+    text-align: left;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 18px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    box-sizing: border-box;
+    margin-bottom: 30px;
+    outline: none;
+    transition: 0.3s;
+    background-color: #f8f9fa;
+}
+input[type="text"]:focus { border-color: #000; background-color: #fff; }
+
+/* --- SLIDER DÜZELTMESİ --- */
+.speed-control { margin-bottom: 30px; }
+.label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.label-row label { font-weight: 600; }
+.speed-badge { background: #000; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.9rem; font-weight: bold;}
+
+.range-wrapper { position: relative; padding-bottom: 25px; } /* Etiketler için alt boşluk */
+
+input[type="range"] {
+    -webkit-appearance: none; width: 100%; background: transparent; display: block;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%; height: 8px; background: #e9ecef; border-radius: 5px; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%;
+    background: #ff0000; cursor: grab; margin-top: -8px; 
+    box-shadow: 0 2px 6px rgba(255, 0, 0, 0.3);
+    transition: transform 0.1s;
+}
+input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.1); cursor: grabbing; }
+
+/* Yeni Etiket Sistemi (Matematiksel Konumlandırma) */
+.ticks {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    margin-top: 10px;
+}
+/* --- SLIDER ETİKET DÜZELTMESİ --- */
+
+/* 1. Tüm etiketler varsayılan olarak ortalı olsun (2x, 3x, 4x için) */
+.ticks span {
+    position: absolute;
+    transform: translateX(-50%); /* Ortala */
+    font-size: 0.75rem;
+    color: #adb5bd;
+    font-weight: 600;
+    width: 30px; /* Sabit genişlik verelim ki kayma yapmasın */
+    text-align: center;
+}
+
+/* 2. İLK etiketi (1x) Sola yasla */
+.ticks span:first-child {
+    transform: translateX(0); /* Ortalamayı iptal et, olduğu yerden başlasın */
+    text-align: left;         /* Yazıyı sola dayalı yap */
+    left: 2px !important;     /* Çok hafif içerden başlasın (Topun hizası için) */
+}
+
+/* 3. SON etiketi (5x) Sağa yasla */
+.ticks span:last-child {
+    transform: translateX(-100%); /* Kendisi kadar geri çek (Sağa yaslama mantığı) */
+    text-align: right;            /* Yazıyı sağa dayalı yap */
+    left: calc(100% - 2px) !important; /* Çok hafif içeride bitsin */
+}
+
+/* Buton */
+button {
+    width: 100%; background-color: #000; color: white; border: none; padding: 18px;
+    font-size: 1.1rem; font-weight: 700; border-radius: 12px; cursor: pointer;
+    transition: transform 0.2s, background 0.3s;
+}
+button:hover { background-color: #333; transform: translateY(-2px); }
+button:disabled { background-color: #ccc; cursor: wait; transform: none; }
+
+/* --- SAĞ TARAF (Sonuçlar) --- */
+.result-section {
+    flex-direction: column;
+    gap: 20px;
+    /* transition içinde display çalışmaz, opacity ile yapılabilir ama şimdilik display toggle yeterli */
+    display: none; /* JS ile flex yapılacak */
+    animation: fadeIn 0.6s ease;
+}
+
+/* Video Kartı */
+.video-card {
+    background: #000;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+.player-container {
+    width: 100%; padding-bottom: 56.25%; position: relative;
+}
+.player-container iframe {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
+}
+
+/* Sonuç Kartı (Ayrıştırılmış) */
+.result-card {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid #f1f3f5;
+}
+.result-card h2 { margin: 0; font-size: 1rem; color: #868e96; text-transform: uppercase; letter-spacing: 1px;}
+.time-box { font-size: 2.8rem; font-weight: 800; color: #000; margin: 15px 0; }
+.divider { height: 1px; background: #e9ecef; width: 50%; margin: 15px auto; }
+.avg-time { color: #868e96; font-size: 0.9rem; margin: 0; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* MOBİL UYUM (Medya Sorgusu) */
+@media (max-width: 768px) {
+    .main-wrapper.expanded {
+        flex-direction: column; /* Mobilde tekrar alt alta olsun */
+    }
+    /* Mobilde video input'un altına gelsin */
+    .result-section { order: 2; }
+    .input-section { order: 1; }
+}
+
+/* İki bilgiyi yan yana ve ortalı tutan kapsayıcı */
+.meta-info {
+    display: flex;
+    justify-content: center; /* Ortalar */
+    align-items: center;     /* Dikeyde hizalar */
+    gap: 15px;               /* Aralarındaki boşluk */
+    margin-top: 15px;        /* Yukarıdan (Total Duration'dan) uzaklık */
+    color: #868e96;          /* Genel yazı rengi */
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Aradaki ince çizgi (Süsleme) */
+.vertical-line {
+    width: 1px;
+    height: 15px;
+    background-color: #dee2e6; /* Çok silik gri çizgi */
+}
+
+/* Sayıların rengi biraz daha koyu olsun */
+.meta-info span {
+    color: #212529;
+    font-weight: 700;
+}
+/* --- MOBİL UYUMLULUK (RESPONSIVE) --- */
+@media (max-width: 900px) { /* Tablet ve Telefonlar için */
+    
+    /* 1. Genişleyince yan yana gelme olayını iptal et, alt alta olsun */
+    .main-wrapper.expanded {
+        flex-direction: column;
+        align-items: center; /* Ortala */
+        max-width: 100%;     /* Ekrana tam otursun */
+    }
+
+    /* 2. Kartların genişliğini ayarla */
+    .input-section, .result-section {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* 3. Mobilde kenar boşluklarını biraz azalt (Alan kazanalım) */
+    .card, .result-card {
+        padding: 25px; 
+    }
+
+    /* 4. Başlık boyutunu biraz küçült (Telefonda çok yer kaplamasın) */
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    /* 5. Slider etiketlerini mobilde biraz küçült */
+    .ticks span {
+        font-size: 0.7rem;
+    }
+
+    /* 6. Sonuçların sırası: Mobilde önce SÜRE sonra VİDEO gelsin istersen: */
+    /* Şu anki HTML yapımızda önce Video var. Eğer Süreyi yukarı almak istersen: */
+    .result-section {
+        display: none; /* JS ile flex oluyor */
+        flex-direction: column-reverse; /* TERS ÇEVİR: Süre üstte, Video altta */
+    }
+    
+    /* Eğer column-reverse yaparsak video-card ile result-card arasına boşluk koymamız gerekir */
+    .result-card {
+        margin-bottom: 20px;
+    }
+}
