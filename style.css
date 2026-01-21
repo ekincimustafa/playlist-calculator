@@ -109,8 +109,8 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.1); cursor
     position: absolute;
     transform: translateX(-50%); /* Ortala */
     font-size: 0.75rem;
-    color: #adb5bd;
-    font-weight: 600;
+    color: #495057;
+    font-weight: 700;
     width: 30px; /* Sabit genişlik verelim ki kayma yapmasın */
     text-align: center;
 }
@@ -256,4 +256,10 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     .result-card {
         margin-bottom: 20px;
     }
+}
+
+/* Placeholder rengini koyulaştır */
+::placeholder {
+    color: #6c757d !important;
+    opacity: 1; /* Firefox için gerekli */
 }
