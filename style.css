@@ -170,7 +170,7 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     border: 1px solid #f1f3f5;
 }
-.result-card h2 { margin: 0; font-size: 1rem; color: #868e96; text-transform: uppercase; letter-spacing: 1px;}
+.result-card h2 { margin: 0; font-size: 1rem; color: #495057; text-transform: uppercase; letter-spacing: 1px;}
 .time-box { font-size: 2.8rem; font-weight: 800; color: #000; margin: 15px 0; }
 .divider { height: 1px; background: #e9ecef; width: 50%; margin: 15px auto; }
 .avg-time { color: #495057; font-size: 0.9rem; margin: 0; }
