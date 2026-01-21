@@ -16,6 +16,8 @@ const secondsEl = document.getElementById('seconds');
 const avgEl = document.getElementById('avgVideo');
 // İŞTE BU EKSİKTİ: Video sayısını yazacağımız alanı buraya tanıtıyoruz
 const videoCountEl = document.getElementById('videoCount');
+// Finish at
+const finishTimeEl = document.getElementById('finishTime');
 
 let totalSecondsGlobal = 0;
 
@@ -34,6 +36,15 @@ speedInput.addEventListener('input', function() {
     // Eğer hesaplama yapılmışsa sonucu yeni hıza göre güncelle
     if (totalSecondsGlobal > 0) displayTime(totalSecondsGlobal / speed);
 });
+
+/* --- SLIDER MODU (SNAP) --- */
+// Kullanıcı slider'a tıkladığı veya dokunduğu an "Küt Küt" moduna geç
+function enableSnapMode() {
+    speedInput.step = '0.25';
+}
+
+speedInput.addEventListener('mousedown', enableSnapMode); // PC için
+speedInput.addEventListener('touchstart', enableSnapMode); // Telefon için
 
 /* --- ANA HESAPLAMA FONKSİYONU --- */
 async function handleCalculation() {
@@ -147,26 +158,112 @@ function parseDuration(d) {
 }
 
 /* --- EKRANI GÜNCELLEME (Sorunun Çözüldüğü Yer) --- */
+/* --- EKRANI GÜNCELLEME FONKSİYONU --- */
 function updateUI(count) {
-    const speed = parseFloat(speedInput.value);
+    // 1. Güncel hızı al
+    const speed = parseFloat(speedInput.value) || 1; // Hata olursa 1 varsay
     
-    // Toplam süreyi yaz
-    displayTime(totalSecondsGlobal / speed);
+    // 2. Hıza göre toplam gerçek süreyi hesapla
+    const realDuration = totalSecondsGlobal / speed;
+
+    // 3. Toplam süreyi ekrana yaz (Saat, Dakika, Saniye kutuları)
+    displayTime(realDuration);
     
-    // VİDEO SAYISINI YAZ (Düzeltme Burada)
+    // 4. Video sayısını yaz
     if (videoCountEl) {
         videoCountEl.innerText = count;
     }
     
-    // Ortalamayı yaz
+    // 5. Ortalama süreyi hesapla ve yaz
     const avg = count > 0 ? totalSecondsGlobal / count : 0;
     const m = Math.floor(avg / 60);
     const s = Math.floor(avg % 60);
-    avgEl.innerText = `${m}m ${s}s`;
+    if (avgEl) {
+        avgEl.innerText = `${m}m ${s}s`;
+    }
+
+    /* --- YENİ: FINISH AT (Bitiş Saati) HESAPLAMA --- */
+    // Eğer finishTimeEl elementi HTML'de varsa hesapla
+    if (finishTimeEl) {
+        const now = new Date();
+        // Şu anki zamana kalan süreyi (milisaniye olarak) ekle
+        const finishDate = new Date(now.getTime() + (realDuration * 1000));
+        
+        // Saati güzel formatla (Örn: 14:30)
+        const finishString = finishDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // Ekrana yaz
+        finishTimeEl.innerText = finishString;
+    }
 }
 
 function displayTime(sec) {
     hoursEl.innerText = Math.floor(sec / 3600);
     minutesEl.innerText = Math.floor((sec % 3600) / 60);
     secondsEl.innerText = Math.floor(sec % 60);
+}
+
+/* --- CUSTOM SPEED ÖZELLİĞİ --- */
+
+// 1. Hız rozetine tıklama olayı
+speedValue.addEventListener('click', function() {
+    // Eğer zaten input varsa (kullanıcı art arda tıklarsa) işlem yapma
+    if (this.querySelector('input')) return;
+
+    const currentSpeed = parseFloat(this.innerText); // Mevcut hızı al (Örn: 1.50)
+
+    // Dinamik olarak bir input oluştur
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '1';
+    input.max = '5';
+    input.step = '0.01';
+    input.value = currentSpeed;
+    input.className = 'speed-input-edit'; // CSS sınıfını ekle
+
+    // Rozetin içini temizle ve inputu koy
+    this.innerText = '';
+    this.appendChild(input);
+    input.focus(); // İmleci içine odakla
+
+    // --- Olaylar ---
+    // 1. Enter tuşuna basılırsa onayla
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') updateCustomSpeed(input.value);
+    });
+
+    // 2. Kutunun dışına tıklanırsa onayla (Blur)
+    input.addEventListener('blur', () => updateCustomSpeed(input.value));
+    
+    // 3. Tıklama slider'a yayılmasın (Event Bubbling'i durdur)
+    input.addEventListener('click', (e) => e.stopPropagation());
+});
+
+// Hızı güncelleyen ve UI'ı düzelten fonksiyon
+function updateCustomSpeed(val) {
+    let newSpeed = parseFloat(val);
+
+    // Validasyon
+    if (isNaN(newSpeed)) newSpeed = 1;
+    if (newSpeed < 0.25) newSpeed = 0.25;
+    if (newSpeed > 5) newSpeed = 5;
+
+    // --- KRİTİK NOKTA BURASI ---
+    // Elle girilen değeri slider'da gösterebilmek için hassasiyeti artırıyoruz
+    speedInput.step = '0.01'; 
+    speedInput.value = newSpeed;
+
+    // Rozeti ve İkonu Güncelle
+    speedValue.innerHTML = `
+        ${newSpeed.toFixed(2)}x
+        <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+    `;
+
+    // Hesaplama yapılmışsa sonucu güncelle
+    if (totalSecondsGlobal > 0) {
+        displayTime(totalSecondsGlobal / newSpeed);
+    }
 }

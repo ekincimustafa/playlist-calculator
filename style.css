@@ -1,3 +1,8 @@
+
+body {
+    font-size: 18px; 
+}
+
 /* Temel Ayarlar */
 body {
     font-family: 'Inter', sans-serif;
@@ -44,11 +49,23 @@ body {
     transition: all 0.5s ease;
 }
 
-header h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; color: #000; }
+header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; color: #000; }
 .separator { width: 100px; height: 4px; background-color: #000; margin: 0 auto 20px auto; border-radius: 2px; }
 header p { 
     color: #212529; /* Okunabilirliği artırdık */
     margin-bottom: 30px; 
+}
+/* --- TIKLANABİLİR BAŞLIK --- */
+.home-link {
+    text-decoration: none; /* Altındaki çizgiyi kaldır */
+    color: inherit; /* Rengi babasından (h1'den) al, mavi yapma */
+    cursor: pointer; /* Üzerine gelince el işareti çıksın */
+    transition: opacity 0.2s; /* Hafif bir animasyon */
+}
+
+/* Üzerine gelince kullanıcı tıklanabilir olduğunu anlasın */
+.home-link:hover {
+    opacity: 0.7; /* Hafifçe şeffaflaşsın */
 }
 
 .card {
@@ -61,10 +78,10 @@ header p {
 
 input[type="text"] {
     width: 100%;
-    padding: 18px;
+    padding: 20px;
     border: 2px solid #e9ecef;
     border-radius: 12px;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     box-sizing: border-box;
     margin-bottom: 30px;
     outline: none;
@@ -171,9 +188,9 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     border: 1px solid #f1f3f5;
 }
 .result-card h2 { margin: 0; font-size: 1rem; color: #212529; text-transform: uppercase; letter-spacing: 1px;}
-.time-box { font-size: 2.8rem; font-weight: 800; color: #000; margin: 15px 0; }
+.time-box { font-size: 3.5rem; font-weight: 800; color: #000; margin: 10px 0;line-height: 1.1; }
 .divider { height: 1px; background: #e9ecef; width: 50%; margin: 15px auto; }
-.avg-time { color: #212529; font-size: 0.9rem; margin: 0; }
+.avg-time { color: #212529; font-size: 1.1rem; margin: 0; }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
@@ -196,9 +213,9 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     justify-content: center; /* Ortalar */
     align-items: center;     /* Dikeyde hizalar */
     gap: 15px;               /* Aralarındaki boşluk */
-    margin-top: 15px;        /* Yukarıdan (Total Duration'dan) uzaklık */
+    margin-top: 5px;        /* Yukarıdan (Total Duration'dan) uzaklık */
     color: #212529 !important;        /* Genel yazı rengi */
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 600;
 }
 
@@ -262,4 +279,82 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
 ::placeholder {
     color: #6c757d !important;
     opacity: 1; /* Firefox için gerekli */
+}
+
+/* --- CUSTOM SPEED (Yeni Özellik) --- */
+
+/* Hız rozetine tıklanabilir havası ver */
+#speedValue {
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    user-select: none; /* Yazı seçilmesin, buton gibi davransın */
+    border: 1px solid transparent; /* Titremeyi önler */
+}
+
+#speedValue:hover {
+    transform: scale(1.1); /* Hafif büyüsün */
+    background-color: #333; /* Rengi açılsın */
+}
+
+/* Tıklayınca açılacak input kutusunun stili */
+.speed-input-edit {
+    width: 60px;
+    padding: 2px;
+    border: none;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #000;
+    outline: none;
+}
+
+/* --- EDİT İKONU AYARLARI --- */
+
+.speed-badge {
+    display: inline-flex; /* İkon ve yazıyı yan yana hizalar */
+    align-items: center;
+    gap: 6px; /* Yazı ile ikon arası boşluk */
+    /* Diğer özellikleri zaten vardı, dokunma */
+}
+
+.edit-icon {
+    width: 14px;
+    height: 14px;
+    opacity: 0.5; /* Varsayılan olarak biraz silik dursun */
+    transition: opacity 0.2s;
+}
+
+/* Üzerine gelince ikon parlasın */
+.speed-badge:hover .edit-icon {
+    opacity: 1;
+}
+
+/* --- YENİ FINISH AT KUTUSU (GÜNCELLENMİŞ) --- */
+.finish-info {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 3px solid #e9ecef; /* Çizgiyi biraz kalınlaştırdık */
+    
+    /* Hizalama Ayarları */
+    display: flex;
+    justify-content: center;
+    align-items: center; /* KRİTİK NOKTA: Dikeyde tam ortalar (Yamukluğu çözer) */
+    gap: 15px; /* Etiket ile saat arası boşluk */
+}
+
+/* "🏁 Finish At:" yazısı */
+.finish-label {
+    color: #495057;
+    font-weight: 600;
+    font-size: 1.2rem; /* Bunu da büyüttük */
+}
+
+/* Saatin kendisi (Örn: 15:45) */
+#finishTime {
+    color: #dc3545; /* CANLI BİR KIRMIZI (Bootstrap Danger Red) */
+    font-weight: 900; /* En kalın ayar */
+    font-size: 1.4rem; /* KOCAMAN OLDU (En dikkat çekici yer burası) */
+    line-height: 1; /* Satır yüksekliğini sıkı tut ki yukarı kaymasın */
+    letter-spacing: 1px;
 }
