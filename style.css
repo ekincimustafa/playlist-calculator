@@ -197,9 +197,9 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     align-items: center;     /* Dikeyde hizalar */
     gap: 15px;               /* Aralarındaki boşluk */
     margin-top: 15px;        /* Yukarıdan (Total Duration'dan) uzaklık */
-    color: #212529;          /* Genel yazı rengi */
+    color: #212529 !important;        /* Genel yazı rengi */
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* Aradaki ince çizgi (Süsleme) */
