@@ -47,7 +47,7 @@ body {
 header h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; color: #000; }
 .separator { width: 100px; height: 4px; background-color: #000; margin: 0 auto 20px auto; border-radius: 2px; }
 header p { 
-    color: #495057; /* Okunabilirliği artırdık */
+    color: #212529; /* Okunabilirliği artırdık */
     margin-bottom: 30px; 
 }
 
@@ -170,10 +170,10 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     border: 1px solid #f1f3f5;
 }
-.result-card h2 { margin: 0; font-size: 1rem; color: #495057; text-transform: uppercase; letter-spacing: 1px;}
+.result-card h2 { margin: 0; font-size: 1rem; color: #212529; text-transform: uppercase; letter-spacing: 1px;}
 .time-box { font-size: 2.8rem; font-weight: 800; color: #000; margin: 15px 0; }
 .divider { height: 1px; background: #e9ecef; width: 50%; margin: 15px auto; }
-.avg-time { color: #495057; font-size: 0.9rem; margin: 0; }
+.avg-time { color: #212529; font-size: 0.9rem; margin: 0; }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
@@ -197,7 +197,7 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     align-items: center;     /* Dikeyde hizalar */
     gap: 15px;               /* Aralarındaki boşluk */
     margin-top: 15px;        /* Yukarıdan (Total Duration'dan) uzaklık */
-    color: #868e96;          /* Genel yazı rengi */
+    color: #212529;          /* Genel yazı rengi */
     font-size: 0.9rem;
     font-weight: 500;
 }
