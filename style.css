@@ -14,6 +14,8 @@ body {
     align-items: center; /* Dikey ortalama */
     color: #212529;
     padding: 20px;
+    padding-bottom: 150px;
+    height: auto;
 }
 
 /* Ana Taşıyıcı: Varsayılan olarak ortada tek sütun */
@@ -32,6 +34,7 @@ body {
     flex-direction: row; /* Yan yana diz */
     align-items: flex-start; /* Yukarı hizala */
     gap: 40px; /* İki sütun arası boşluk */
+    flex-wrap: wrap;
 }
 
 .main-wrapper.expanded .input-section {
@@ -358,3 +361,119 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     line-height: 1; /* Satır yüksekliğini sıkı tut ki yukarı kaymasın */
     letter-spacing: 1px;
 }
+
+/* --- VİDEO LİSTESİ (ACCORDION) --- */
+
+.video-list-section {
+    /* 1. Konumlandırma Ayarları */
+    flex-basis: 100%;
+    max-width: 850px; /* Genişliği sınırlı tut */
+    margin: 0 auto 40px auto; /* Ortala ve alttan boşluk bırak */
+    
+    display: none; /* JS açana kadar gizli */
+    order: 3;
+    animation: fadeIn 0.8s ease;
+
+    /* 2. BEYAZ KART GÖRÜNÜMÜ (Eklenen Kısım) */
+    background-color: #ffffff; /* Beyaz arka plan */
+    padding: 30px; /* İçerik kenarlara yapışmasın */
+    border-radius: 20px; /* Köşeleri yuvarla */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.05); /* Hafif gölge */
+    border: 1px solid rgba(0,0,0,0.03); /* Çok ince çerçeve */
+}
+
+/* Tıklanabilir Başlık */
+.list-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 5px;
+    color: #495057;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.list-toggle:hover {
+    color: #000;
+}
+
+.toggle-icon {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Aktif olunca (Açılınca) ikon dönsün */
+.list-toggle.active .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* --- GİZLİ LİSTE KUTUSU --- */
+.video-list-container {
+    max-height: 0; /* Başlangıçta gizli */
+    overflow: hidden; /* Taşanı gösterme */
+    transition: max-height 0.5s ease-out; /* Kayarak açılma animasyonu */
+}
+
+/* Liste Stili */
+.video-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.video-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid #f1f3f5;
+    transition: background 0.2s;
+}
+
+.video-item:hover {
+    background-color: #f8f9fa;
+}
+
+.video-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #000; /* Checkbox rengi siyah olsun */
+}
+
+.video-item img {
+    width: 60px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.video-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    overflow: hidden;
+}
+
+.v-title {
+    font-weight: 600;
+    color: #212529;
+    white-space: normal; /* Alt satıra geçmeye izin ver */
+    overflow: visible;   /* Gizleme yapma */
+    text-overflow: clip; /* Üç nokta (...) koyma */
+    max-width: none;     /* Genişlik sınırı yok, yayılabildiği kadar yayılsın */
+    line-height: 1.4;    /* Satır arasını biraz açalım, okunaklı olsun */
+}
+
+.v-duration {
+    color: #868e96;
+    font-size: 0.8rem;
+}
+
+/* Scrollbar Güzelleştirme (Chrome/Safari) */
+.video-list::-webkit-scrollbar { width: 8px; }
+.video-list::-webkit-scrollbar-track { background: #f1f1f1; }
+.video-list::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 4px; }
+.video-list::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
