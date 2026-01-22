@@ -543,4 +543,22 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     .separator-dot {
         display: none; /* Mobilde noktaları gizle */
     }
+    /* 1. Body Ayarı: İçeriği ortalamayı bırak, yukarı yasla */
+    body {
+        justify-content: flex-start; /* İçerik en tepeden başlasın */
+        padding-top: 20px; /* Üstten biraz boşluk kalsın */
+        height: auto !important; /* Yükseklik kilidini aç */
+        min-height: 100vh;
+    }
+
+    /* 2. Footer Ayarı: En alta yapışmayı bırak, içeriği takip et */
+    .site-footer {
+        margin-top: 20px !important; /* Auto yerine sabit, küçük boşluk */
+        padding: 20px 15px; /* Mobilde iç boşluğu biraz azalt */
+    }
+
+    /* 3. Liste Kutusu: Alt boşluğu azalt */
+    .video-list-section {
+        margin-bottom: 20px !important;
+    }
 }
