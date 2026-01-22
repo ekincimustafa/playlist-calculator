@@ -18,9 +18,9 @@ const avgEl = document.getElementById('avgVideo');
 const videoCountEl = document.getElementById('videoCount');
 // Finish at
 const finishTimeEl = document.getElementById('finishTime');
-
+const videoListSection = document.getElementById('videoListSection');
 let totalSecondsGlobal = 0;
-
+let videoDataList = []; // <--- YENİ: Tüm videoları burada tutacağız
 /* --- OLAY DİNLEYİCİLERİ --- */
 calcBtn.addEventListener('click', handleCalculation);
 
@@ -31,10 +31,17 @@ urlInput.addEventListener('keypress', (e) => {
 
 // Slider değişince anlık güncelleme
 speedInput.addEventListener('input', function() {
-    const speed = parseFloat(this.value);
-    speedValue.innerText = speed.toFixed(2) + 'x';
-    // Eğer hesaplama yapılmışsa sonucu yeni hıza göre güncelle
-    if (totalSecondsGlobal > 0) displayTime(totalSecondsGlobal / speed);
+    const val = this.value;
+    
+    // Rozeti güncelle
+    if (speedValue) speedValue.innerHTML = `${parseFloat(val).toFixed(2)} x `; // (Senin ikon kodun burada kalsın)
+
+    // Eğer hesaplama yapılmışsa tüm ekranı (Finish At dahil) güncelle
+    if (totalSecondsGlobal > 0) {
+        // Video sayısını mevcut ekrandan alıp fonksiyona geri veriyoruz
+        const currentCount = videoCountEl ? videoCountEl.innerText : 0;
+        updateUI(currentCount); 
+    }
 });
 
 /* --- SLIDER MODU (SNAP) --- */
@@ -75,7 +82,12 @@ async function handleCalculation() {
         // İşlem bitince ekranı genişlet
         mainWrapper.classList.add('expanded');
         document.getElementById('resultSection').style.display = 'flex';
-
+        
+        if (playlistId && videoListSection) {
+            videoListSection.style.display = 'block';
+        } else if (videoListSection) {
+            videoListSection.style.display = 'none'; // Tek video ise sakla
+        }
     } catch (error) {
         console.error(error);
         alert("Error: " + error.message);
@@ -106,36 +118,79 @@ function embedPlayer(id, type) {
     videoPlayer.innerHTML = `<iframe src="${src}" allowfullscreen></iframe>`;
 }
 
-/* --- VERİ ÇEKME İŞLEMLERİ --- */
+// 1. PLAYLIST İÇİN
 async function fetchPlaylistData(pid) {
-    let nextToken = '', videoIds = [];
-    totalSecondsGlobal = 0;
+    let nextToken = '';
+    videoDataList = []; // Listeyi sıfırla
+    let videos = [];
 
-    // 1. Tüm video ID'lerini topla (Sayfalama yaparak)
+    // A) Videoların Başlık, Resim ve ID'lerini topla
     do {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=50&playlistId=${pid}&key=${API_KEY}&pageToken=${nextToken}`);
+        // snippet = Başlık/Resim, contentDetails = ID
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${pid}&key=${API_KEY}&pageToken=${nextToken}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        
-        data.items.forEach(item => videoIds.push(item.contentDetails.videoId));
+
+        data.items.forEach(item => {
+            // Silinmiş videoları listeye alma
+            const title = item.snippet.title;
+            if (title !== "Private video" && title !== "Deleted video") {
+                videos.push({
+                    id: item.contentDetails.videoId,
+                    title: item.snippet.title,
+                    thumb: item.snippet.thumbnails?.default?.url || 'https://i.ytimg.com/img/no_thumbnail.jpg',
+                    duration: 0, // Birazdan öğreneceğiz
+                    active: true // Varsayılan olarak seçili
+                });
+            }
+        });
         nextToken = data.nextPageToken || '';
     } while (nextToken);
 
-    // 2. Bu ID'lerin sürelerini çek
-    for (let i = 0; i < videoIds.length; i += 50) {
-        const chunk = videoIds.slice(i, i+50).join(',');
-        await fetchVideoDurations(chunk);
+    // B) Bu videoların sürelerini (Duration) çek
+    // YouTube API en fazla 50 ID kabul eder, parça parça soracağız.
+    for (let i = 0; i < videos.length; i += 50) {
+        const chunk = videos.slice(i, i + 50);
+        const videoIds = chunk.map(v => v.id).join(',');
+
+        const vidResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${API_KEY}`);
+        const vidData = await vidResponse.json();
+
+        vidData.items.forEach(item => {
+            const duration = parseDuration(item.contentDetails.duration);
+            // Süreyi doğru videoya eşleştir
+            const video = videos.find(v => v.id === item.id);
+            if (video) video.duration = duration;
+        });
     }
-    
-    // Ekrana bas
-    updateUI(videoIds.length);
+
+    // C) Global listeyi güncelle ve Hesapla
+    videoDataList = videos;
+    recalculateTotal(); // Toplamı hesapla ve UI'ı güncelle
+    renderVideoList();  // Listeyi ekrana bas
 }
 
-// Tek video için veri çekme
+// 2. TEK VİDEO İÇİN
 async function fetchSingleVideoData(vid) {
-    totalSecondsGlobal = 0;
-    await fetchVideoDurations(vid);
-    updateUI(1); // Sayı her zaman 1'dir
+    videoDataList = []; // Sıfırla
+
+    // Video detaylarını çek
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${vid}&key=${API_KEY}`);
+    const data = await res.json();
+    
+    if (data.items.length > 0) {
+        const item = data.items[0];
+        videoDataList.push({
+            id: item.id,
+            title: item.snippet.title,
+            thumb: item.snippet.thumbnails?.default?.url || '',
+            duration: parseDuration(item.contentDetails.duration),
+            active: true
+        });
+    }
+
+    recalculateTotal();
+    renderVideoList();
 }
 
 // Ortak süre çekme fonksiyonu
@@ -266,4 +321,84 @@ function updateCustomSpeed(val) {
     if (totalSecondsGlobal > 0) {
         displayTime(totalSecondsGlobal / newSpeed);
     }
+}
+
+/* --- ACCORDION AÇ/KAPA MANTIĞI --- */
+const listToggle = document.getElementById('listToggle');
+const listContainer = document.getElementById('videoListContainer');
+
+listToggle.addEventListener('click', () => {
+    listToggle.classList.toggle('active');
+    
+    if (listContainer.style.maxHeight) {
+        // Zaten açıksa kapat
+        listContainer.style.maxHeight = null;
+    } else {
+        // Kapalıysa aç (İçeriğin boyutu kadar yer aç)
+        listContainer.style.maxHeight = listContainer.scrollHeight + "px";
+    }
+});
+
+/* --- LİSTE VE HESAPLAMA YÖNETİMİ --- */
+
+// 1. Listeyi HTML'e Dönüştür
+function renderVideoList() {
+    const listEl = document.getElementById('videoList');
+    if(!listEl) return;
+    
+    listEl.innerHTML = ''; // Temizle
+
+    videoDataList.forEach((video, index) => {
+        const li = document.createElement('li');
+        li.className = 'video-item';
+        // Satıra tıklayınca da seç/bırak yapsın
+        li.onclick = (e) => toggleVideo(index, e);
+
+        // HTML Yapısı
+        li.innerHTML = `
+            <input type="checkbox" ${video.active ? 'checked' : ''}>
+            <img src="${video.thumb}" alt="thumb" loading="lazy">
+            <div class="video-info">
+                <span class="v-title">${index + 1}. ${video.title}</span>
+                <span class="v-duration">${formatSimpleTime(video.duration)}</span>
+            </div>
+        `;
+        listEl.appendChild(li);
+    });
+}
+
+// 2. Video Seç/Bırak (Checkbox)
+function toggleVideo(index, event) {
+    // Checkbox'a basıldıysa (otomatik değişir), satıra basıldıysa biz değiştiririz
+    if (event.target.type !== 'checkbox') {
+        videoDataList[index].active = !videoDataList[index].active;
+        renderVideoList(); // Görseli güncelle
+    } else {
+        videoDataList[index].active = event.target.checked;
+    }
+    recalculateTotal(); // Süreyi yeniden hesapla
+}
+
+// 3. Toplam Süreyi Yeniden Hesapla (Sadece Seçililer)
+function recalculateTotal() {
+    let newTotal = 0;
+    let activeCount = 0;
+
+    videoDataList.forEach(video => {
+        if (video.active) {
+            newTotal += video.duration;
+            activeCount++;
+        }
+    });
+
+    totalSecondsGlobal = newTotal; // Global süreyi güncelle
+    updateUI(activeCount); // Ekranı güncelle (Count, Avg, Finish At hepsi burada)
+}
+
+// 4. Liste İçin Basit Süre Formatı (12:30 gibi)
+function formatSimpleTime(seconds) {
+    if (seconds === 0) return "Live/Unknown";
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
 }
