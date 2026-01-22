@@ -14,8 +14,9 @@ body {
     align-items: center; /* Dikey ortalama */
     color: #212529;
     padding: 20px;
-    padding-bottom: 150px;
-    height: auto;
+    flex-direction: column; /* İçerikleri alt alta diz (Main + Footer) */
+    padding-bottom: 0; /* Yapay boşluğu kaldır */
+    /* min-height: 100vh zaten vardı, kalsın */
 }
 
 /* Ana Taşıyıcı: Varsayılan olarak ortada tek sütun */
@@ -477,3 +478,69 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
 .video-list::-webkit-scrollbar-track { background: #f1f1f1; }
 .video-list::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 4px; }
 .video-list::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+
+/* --- FOOTER TASARIMI --- */
+
+.site-footer {
+    width: 100%;
+    padding: 30px 20px;
+    margin-top: auto; /* Sayfanın en altına it */
+    text-align: center;
+    color: #6c757d; /* Gri tonu (Göz yormaz) */
+    font-size: 0.9rem;
+    border-top: 1px solid #e9ecef; /* İnce bir ayırıcı çizgi */
+    background-color: #f8f9fa; /* Ana arka planla uyumlu */
+}
+
+.footer-content {
+    max-width: 850px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Linkler */
+.site-footer a {
+    color: #495057;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.site-footer a:hover {
+    color: #000; /* Üzerine gelince siyah olsun */
+}
+
+/* GitHub İkonu */
+.github-link svg {
+    fill: currentColor;
+}
+
+/* Ayırıcı Nokta */
+.separator-dot {
+    color: #adb5bd;
+}
+
+/* Mobil Uyum */
+@media (max-width: 600px) {
+    .footer-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .separator-dot {
+        display: none; /* Mobilde noktaları gizle */
+    }
+}

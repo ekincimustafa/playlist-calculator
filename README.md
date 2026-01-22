@@ -1,36 +1,57 @@
-# YouTube Playlist Calculator 🎥
+# 📺 YouTube Playlist Length Calculator
 
-A fast, lightweight, and ad-free tool to calculate the total duration of any YouTube playlist. Designed for students and self-learners who want to optimize their study time by checking playlist durations at 1.25x, 1.5x, or 2x speeds.
+<div align="center">
+  <img src="https://img.shields.io/badge/Lighthouse-100%2F100-success?style=for-the-badge&logo=lighthouse" alt="Lighthouse Score">
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License">
+  <br>
+  <h3><a href="https://ytplaylistcalculator.com">View Live Demo 🚀</a></h3>
+</div>
 
-🔗 **Live Demo:** [ytplaylistcalculator.com](https://ytplaylistcalculator.com)
+<br>
 
-## 🚀 Features
+An open-source, ad-free web tool developed by a **Computer Engineering student at Hacettepe University**. It calculates the total duration of any YouTube playlist, allows users to check lengths at custom playback speeds (e.g., 1.5x, 2x), and manage videos to see the remaining time.
 
-* **Instant Calculation:** Fetches total duration of large playlists instantly using YouTube Data API v3.
-* **Time Management:** Shows exactly how much time you save watching at 1.25x, 1.5x, 1.75x, and 2x speeds.
-* **Mobile First:** Fully responsive design that works seamlessly on desktop, tablet, and mobile.
-* **Privacy Focused:** No user data is stored or tracked.
+![Project Screenshot](og-image.jpg)
+
+## ✨ Features
+
+* **⚡ Instant Calculation:** Fetches data using YouTube Data API v3 to calculate total duration instantly.
+* **🎛️ Custom Playback Speed:** Precise control from **1.00x to 5.00x**. See how much time you save by watching faster.
+* **🏁 "Finish At" Prediction:** Calculates exactly what time you will finish watching the playlist if you start right now.
+* **✅ Advanced Video Management:** Select/Deselect specific videos in the playlist to exclude them from the calculation (perfect for tracking watched videos).
+* **🚀 High Performance:** Achieved **100/100** scores on Google Lighthouse for Performance, Accessibility, and SEO.
+* **📱 Fully Responsive:** Works perfectly on desktop, tablet, and mobile devices.
 
 ## 🛠️ Tech Stack
 
-This project is built with **Vanilla JavaScript**, demonstrating core DOM manipulation and API integration skills without relying on heavy frameworks.
-
-* **Frontend:** HTML5, CSS3, JavaScript (ES6+)
+* **Frontend:** HTML5, CSS3 (Modern Flexbox/Grid), Vanilla JavaScript (No Frameworks)
 * **API:** YouTube Data API v3
-* **Hosting:** GitHub Pages
-* **DNS:** Namecheap
+* **Tools:** Git, VS Code
 
-## 💻 How to Run Locally
+## 🚀 Installation (Run Locally)
 
-If you want to clone and run this project on your local machine:
+If you want to run this project on your local machine:
 
-1.  Clone the repository:
+1.  **Clone the repository:**
     ```bash
     git clone [https://github.com/ekincimustafa/playlist-calculator.git](https://github.com/ekincimustafa/playlist-calculator.git)
     ```
-2.  Navigate to the project directory and open `index.html` in your browser.
-3.  **Note:** You will need to insert your own YouTube Data API Key in `script.js` for the fetch requests to work locally.
+2.  **Navigate to the project directory:**
+    ```bash
+    cd playlist-calculator
+    ```
+3.  **Setup API Key:**
+    * Open `script.js`.
+    * Replace `const API_KEY = 'YOUR_API_KEY';` with your own YouTube Data API v3 key.
+4.  **Run:**
+    * Open `index.html` in your browser.
 
-## 📝 License
+## 👨‍💻 Developer
 
-This project is open source and available under the [MIT License](LICENSE).
+**Mustafa Ekinci**
+
+* **LinkedIn:** [linkedin.com/in/mustafa-ekinci](https://www.linkedin.com/in/mustafa-ekinci/)
+* **Website:** [ytplaylistcalculator.com](https://ytplaylistcalculator.com)
+
+---
+*© 2026 All Rights Reserved.*

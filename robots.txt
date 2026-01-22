@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ytplaylistcalculator.com/sitemap.xml
