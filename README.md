@@ -50,7 +50,7 @@ If you want to run this project on your local machine:
 
 **Mustafa Ekinci**
 
-* **LinkedIn:** [linkedin.com/in/mustafa-ekinci](https://www.linkedin.com/in/ekincimustafa/)
+* **LinkedIn:** [linkedin.com/in/ekincimustafa](https://www.linkedin.com/in/ekincimustafa/)
 * **Website:** [ytplaylistcalculator.com](https://ytplaylistcalculator.com)
 
 ---
