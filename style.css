@@ -535,30 +535,39 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
 }
 
 /* Mobil Uyum */
-@media (max-width: 600px) {
-    .footer-links {
-        flex-direction: column;
-        gap: 10px;
-    }
-    .separator-dot {
-        display: none; /* Mobilde noktaları gizle */
-    }
-    /* 1. Body Ayarı: İçeriği ortalamayı bırak, yukarı yasla */
+@media (max-width: 900px) {
     body {
-        justify-content: flex-start; /* İçerik en tepeden başlasın */
-        padding-top: 20px; /* Üstten biraz boşluk kalsın */
-        height: auto !important; /* Yükseklik kilidini aç */
-        min-height: 100vh;
+        /* 1. Ekranı tam kapla */
+        min-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column;
+        padding: 20px;
+        /* justify-content: center; <-- BUNU SİLDİK, çünkü footer'ı da ortalıyordu */
     }
 
-    /* 2. Footer Ayarı: En alta yapışmayı bırak, içeriği takip et */
+    .main-wrapper {
+        /* 2. SİHİRLİ KOD BURASI */
+        flex: 1; /* "Mevcut tüm boş alanı ben kaplarım" der */
+        
+        /* İçindeki kartı ortalamak için: */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Kartı dikeyde ortala */
+        
+        width: 100%;
+        margin: 0 auto;
+    }
+
     .site-footer {
-        margin-top: 20px !important; /* Auto yerine sabit, küçük boşluk */
-        padding: 20px 15px; /* Mobilde iç boşluğu biraz azalt */
+        /* 3. Footer artık en altta */
+        margin-top: auto; /* Kendini en alta it */
+        padding: 20px 15px;
+        background: transparent;
+        border: none;
     }
 
-    /* 3. Liste Kutusu: Alt boşluğu azalt */
-    .video-list-section {
-        margin-bottom: 20px !important;
+    /* Klavye açılınca veya ekran çok kısaysa (yatay mod) ortalamayı kapat */
+    @media (max-height: 600px) {
+        .main-wrapper { justify-content: flex-start; padding-top: 20px; }
     }
 }
