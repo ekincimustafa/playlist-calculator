@@ -6,8 +6,8 @@
  */
 
 // --- CONFIGURATION ---
-// Artık API Key yok! İstekler kendi Python backend sunucumuza gidiyor.
-const BACKEND_URL = 'http://127.0.0.1:8000'; // Canlıya aldığında burayı render/railway linkinle değiştireceksin.
+
+const BACKEND_URL = 'https://playlist-backend-6ojq.onrender.com'; 
 
 // --- DOM ELEMENTS ---
 const mainWrapper = document.getElementById('mainWrapper');
@@ -70,10 +70,8 @@ async function handleCalculation() {
     try {
         if (playlistId) {
             embedPlayer(playlistId, 'playlist');
-            await fetchFromBackend(playlistId); // YENİ: Doğrudan backend'e istek at
+            await fetchFromBackend(playlistId); 
         } else {
-            // Not: Şimdilik tekil video kısmını backend'e eklemedik, sadece playlist mantığını taşıdık.
-            // Tekil video için de backend'e ufak bir endpoint eklenebilir.
             alert("Şu anki backend sadece playlist'leri desteklemektedir. Lütfen bir playlist linki girin.");
         }
         
@@ -114,13 +112,9 @@ function embedPlayer(id, type) {
     videoPlayer.innerHTML = `<iframe src="${src}" allowfullscreen></iframe>`;
 }
 
-/**
- * YENİ: Veriyi Google yerine kendi Python sunucumuzdan çeken fonksiyon
- */
 async function fetchFromBackend(pid) {
     videoDataList = [];
     
-    // Kendi sunucumuza istek atıyoruz
     const res = await fetch(`${BACKEND_URL}/api/playlist/${pid}`);
     
     if (!res.ok) {
