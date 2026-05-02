@@ -1,13 +1,13 @@
 /**
  * ==========================================
  * YOUTUBE PLAYLIST LENGTH CALCULATOR
- * Core Logic & API Integration
+ * Core Logic & Custom Backend Integration
  * ==========================================
  */
 
 // --- CONFIGURATION ---
-// Note: API Key is restricted via Google Cloud Console (HTTP Referrers & Quotas)
-const API_KEY = 'AIzaSyDZEQ482r7Ofg06PePEP7VnCW_VcG7pk78';
+// Artık API Key yok! İstekler kendi Python backend sunucumuza gidiyor.
+const BACKEND_URL = 'http://127.0.0.1:8000'; // Canlıya aldığında burayı render/railway linkinle değiştireceksin.
 
 // --- DOM ELEMENTS ---
 const mainWrapper = document.getElementById('mainWrapper');
@@ -27,8 +27,8 @@ const finishTimeEl = document.getElementById('finishTime');
 const videoListSection = document.getElementById('videoListSection');
 
 // --- GLOBAL STATE ---
-let totalSecondsGlobal = 0; // Stores the base duration of all active videos
-let videoDataList = [];     // Array storing metadata for each video {id, title, duration, active}
+let totalSecondsGlobal = 0; 
+let videoDataList = [];     
 
 // --- EVENT LISTENERS ---
 calcBtn.addEventListener('click', handleCalculation);
@@ -37,7 +37,6 @@ urlInput.addEventListener('keypress', (e) => {
     if(e.key === 'Enter') handleCalculation() 
 });
 
-// Real-time speed adjustment using the slider
 speedInput.addEventListener('input', function() {
     const val = this.value;
     if (speedValue) speedValue.innerHTML = `${parseFloat(val).toFixed(2)} x `; 
@@ -48,13 +47,12 @@ speedInput.addEventListener('input', function() {
     }
 });
 
-// Enable precise snapping for mobile/touch users
 function enableSnapMode() { speedInput.step = '0.25'; }
 speedInput.addEventListener('mousedown', enableSnapMode); 
 speedInput.addEventListener('touchstart', enableSnapMode); 
 
 /**
- * Main Controller: Handles the input, triggers fetching, and updates UI layout.
+ * Main Controller
  */
 async function handleCalculation() {
     const url = urlInput.value;
@@ -66,24 +64,22 @@ async function handleCalculation() {
         return;
     }
 
-    // UI Loading State
     calcBtn.disabled = true;
     calcBtn.innerText = "Processing...";
 
     try {
         if (playlistId) {
             embedPlayer(playlistId, 'playlist');
-            await fetchPlaylistData(playlistId);
+            await fetchFromBackend(playlistId); // YENİ: Doğrudan backend'e istek at
         } else {
-            embedPlayer(videoId, 'video');
-            await fetchSingleVideoData(videoId);
+            // Not: Şimdilik tekil video kısmını backend'e eklemedik, sadece playlist mantığını taşıdık.
+            // Tekil video için de backend'e ufak bir endpoint eklenebilir.
+            alert("Şu anki backend sadece playlist'leri desteklemektedir. Lütfen bir playlist linki girin.");
         }
         
-        // Expand UI to show results
         mainWrapper.classList.add('expanded');
         document.getElementById('resultSection').style.display = 'flex';
         
-        // Show Video Management list only for playlists
         if (playlistId && videoListSection) {
             videoListSection.style.display = 'block';
         } else if (videoListSection) {
@@ -91,7 +87,7 @@ async function handleCalculation() {
         }
     } catch (error) {
         console.error(error);
-        alert("Error: " + error.message);
+        alert("Hata: Backend sunucusuna ulaşılamadı veya hatalı link. " + error.message);
     } finally {
         calcBtn.disabled = false;
         calcBtn.innerText = "Calculate Duration";
@@ -119,80 +115,35 @@ function embedPlayer(id, type) {
 }
 
 /**
- * Fetches playlist items and calculates duration in chunks of 50 (API limit).
- * @param {string} pid - YouTube Playlist ID
+ * YENİ: Veriyi Google yerine kendi Python sunucumuzdan çeken fonksiyon
  */
-async function fetchPlaylistData(pid) {
-    let nextToken = '';
+async function fetchFromBackend(pid) {
     videoDataList = [];
-    let videos = [];
-
-    // Step 1: Collect Video IDs, Titles, and Thumbnails
-    do {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${pid}&key=${API_KEY}&pageToken=${nextToken}`);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
-
-        data.items.forEach(item => {
-            const title = item.snippet.title;
-            // Exclude unavailable videos
-            if (title !== "Private video" && title !== "Deleted video") {
-                videos.push({
-                    id: item.contentDetails.videoId,
-                    title: item.snippet.title,
-                    thumb: item.snippet.thumbnails?.default?.url || 'https://i.ytimg.com/img/no_thumbnail.jpg',
-                    duration: 0, 
-                    active: true 
-                });
-            }
-        });
-        nextToken = data.nextPageToken || '';
-    } while (nextToken);
-
-    // Step 2: Fetch actual durations for collected IDs (Batched requests)
-    for (let i = 0; i < videos.length; i += 50) {
-        const chunk = videos.slice(i, i + 50);
-        const videoIds = chunk.map(v => v.id).join(',');
-
-        const vidResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${API_KEY}`);
-        const vidData = await vidResponse.json();
-
-        vidData.items.forEach(item => {
-            const duration = parseDuration(item.contentDetails.duration);
-            const video = videos.find(v => v.id === item.id);
-            if (video) video.duration = duration;
-        });
+    
+    // Kendi sunucumuza istek atıyoruz
+    const res = await fetch(`${BACKEND_URL}/api/playlist/${pid}`);
+    
+    if (!res.ok) {
+        throw new Error("Backend'den veri alınamadı!");
     }
 
-    videoDataList = videos;
+    const data = await res.json();
+    
+    // Backend'in gönderdiği temiz JSON formatını kendi iç yapımıza uyarlıyoruz
+    data.videos.forEach(item => {
+        videoDataList.push({
+            id: item.id,
+            title: item.title,
+            thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
+            duration: parseDuration(item.duration),
+            active: true 
+        });
+    });
+
     recalculateTotal(); 
     renderVideoList();  
 }
 
-async function fetchSingleVideoData(vid) {
-    videoDataList = [];
-
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${vid}&key=${API_KEY}`);
-    const data = await res.json();
-    
-    if (data.items.length > 0) {
-        const item = data.items[0];
-        videoDataList.push({
-            id: item.id,
-            title: item.snippet.title,
-            thumb: item.snippet.thumbnails?.default?.url || '',
-            duration: parseDuration(item.contentDetails.duration),
-            active: true
-        });
-    }
-
-    recalculateTotal();
-    renderVideoList();
-}
-
-/**
- * Converts ISO 8601 duration format (e.g., PT1H2M10S) to total seconds.
- */
 function parseDuration(d) {
     const m = d.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
     if (!m) return 0;
@@ -202,9 +153,8 @@ function parseDuration(d) {
     return (h * 3600) + (min * 60) + s;
 }
 
-/**
- * Updates all DOM elements related to calculations (Time, Avg, Finish At)
- */
+// ... [KODUN GERİ KALAN KISMI (updateUI, displayTime, updateCustomSpeed, renderVideoList, toggleVideo vs.) AYNEN KALACAK] ...
+
 function updateUI(count) {
     const speed = parseFloat(speedInput.value) || 1; 
     const realDuration = totalSecondsGlobal / speed;
@@ -213,13 +163,11 @@ function updateUI(count) {
 
     if (videoCountEl) videoCountEl.innerText = count;
     
-    // Average Video Time
     const avg = count > 0 ? totalSecondsGlobal / count : 0;
     const m = Math.floor(avg / 60);
     const s = Math.floor(avg % 60);
     if (avgEl) avgEl.innerText = `${m}m ${s}s`;
 
-    // "Finish At" Prediction
     if (finishTimeEl) {
         const now = new Date();
         const finishDate = new Date(now.getTime() + (realDuration * 1000));
@@ -233,8 +181,6 @@ function displayTime(sec) {
     minutesEl.innerText = Math.floor((sec % 3600) / 60);
     secondsEl.innerText = Math.floor(sec % 60);
 }
-
-// --- CUSTOM SPEED LOGIC ---
 
 speedValue.addEventListener('click', function() {
     if (this.querySelector('input')) return;
@@ -281,12 +227,9 @@ function updateCustomSpeed(val) {
     }
 }
 
-// --- VIDEO LIST & TOGGLE MANAGEMENT ---
-
 const listToggle = document.getElementById('listToggle');
 const listContainer = document.getElementById('videoListContainer');
 
-// Accordion animation
 listToggle.addEventListener('click', () => {
     listToggle.classList.toggle('active');
     
@@ -297,9 +240,6 @@ listToggle.addEventListener('click', () => {
     }
 });
 
-/**
- * Renders the video selection list in the DOM.
- */
 function renderVideoList() {
     const listEl = document.getElementById('videoList');
     if(!listEl) return;
@@ -323,9 +263,6 @@ function renderVideoList() {
     });
 }
 
-/**
- * Includes or excludes a video from the calculation when clicked.
- */
 function toggleVideo(index, event) {
     if (event.target.type !== 'checkbox') {
         videoDataList[index].active = !videoDataList[index].active;
@@ -336,9 +273,6 @@ function toggleVideo(index, event) {
     recalculateTotal(); 
 }
 
-/**
- * Recalculates the global duration based only on 'active' videos.
- */
 function recalculateTotal() {
     let newTotal = 0;
     let activeCount = 0;
