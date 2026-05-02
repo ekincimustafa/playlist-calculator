@@ -64,6 +64,11 @@ async function handleCalculation() {
         return;
     }
 
+    if (playlistId && playlistId.startsWith("RD")) {
+        alert("YouTube Mix playlists are auto-generated and cannot be calculated. Please enter a standard playlist or video link.");
+        return; 
+    }
+
     calcBtn.disabled = true;
     calcBtn.innerText = "Processing...";
 
