@@ -56,7 +56,7 @@ speedInput.addEventListener('touchstart', enableSnapMode);
  */
 async function handleCalculation() {
     const url = urlInput.value;
-    const playlistId = extractPlaylistId(url);
+    let playlistId = extractPlaylistId(url);
     const videoId = extractVideoId(url);
 
     if (!playlistId && !videoId) {
@@ -65,8 +65,12 @@ async function handleCalculation() {
     }
 
     if (playlistId && playlistId.startsWith("RD")) {
-        alert("YouTube Mix playlists are auto-generated and cannot be calculated. Please enter a standard playlist or video link.");
-        return; 
+        if (videoId) {
+            playlistId = null; 
+        } else {
+            alert("YouTube Mix playlists are auto-generated and cannot be calculated. Please enter a standard playlist or video link.");
+            return;
+        }
     }
 
     calcBtn.disabled = true;
