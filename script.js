@@ -70,9 +70,10 @@ async function handleCalculation() {
     try {
         if (playlistId) {
             embedPlayer(playlistId, 'playlist');
-            await fetchFromBackend(playlistId); 
+            await fetchFromBackend(playlistId);
         } else {
-            alert("Şu anki backend sadece playlist'leri desteklemektedir. Lütfen bir playlist linki girin.");
+            embedPlayer(videoId, 'video');
+            await fetchSingleVideoFromBackend(videoId); 
         }
         
         mainWrapper.classList.add('expanded');
@@ -85,7 +86,8 @@ async function handleCalculation() {
         }
     } catch (error) {
         console.error(error);
-        alert("Hata: Backend sunucusuna ulaşılamadı veya hatalı link. " + error.message);
+        
+        alert("Error: " + error.message);
     } finally {
         calcBtn.disabled = false;
         calcBtn.innerText = "Calculate Duration";
@@ -116,14 +118,36 @@ async function fetchFromBackend(pid) {
     videoDataList = [];
     
     const res = await fetch(`${BACKEND_URL}/api/playlist/${pid}`);
-    
+    const data = await res.json();
+
     if (!res.ok) {
-        throw new Error("Backend'den veri alınamadı!");
+        throw new Error(data.detail || "Failed to fetch playlist data.");
+    }
+    
+    data.videos.forEach(item => {
+        videoDataList.push({
+            id: item.id,
+            title: item.title,
+            thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
+            duration: parseDuration(item.duration),
+            active: true 
+        });
+    });
+
+    recalculateTotal(); 
+    renderVideoList();  
+}
+
+async function fetchSingleVideoFromBackend(vid) {
+    videoDataList = [];
+    
+    const res = await fetch(`${BACKEND_URL}/api/video/${vid}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.detail || "Failed to fetch video data.");
     }
 
-    const data = await res.json();
-    
-    // Backend'in gönderdiği temiz JSON formatını kendi iç yapımıza uyarlıyoruz
     data.videos.forEach(item => {
         videoDataList.push({
             id: item.id,
@@ -147,7 +171,6 @@ function parseDuration(d) {
     return (h * 3600) + (min * 60) + s;
 }
 
-// ... [KODUN GERİ KALAN KISMI (updateUI, displayTime, updateCustomSpeed, renderVideoList, toggleVideo vs.) AYNEN KALACAK] ...
 
 function updateUI(count) {
     const speed = parseFloat(speedInput.value) || 1; 
