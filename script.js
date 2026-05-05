@@ -63,7 +63,7 @@ async function handleCalculation() {
         alert("Please enter a valid YouTube link!");
         return;
     }
-
+ 
     if (playlistId && playlistId.startsWith("RD")) {
         if (videoId) {
             playlistId = null; 
@@ -75,6 +75,11 @@ async function handleCalculation() {
 
     calcBtn.disabled = true;
     calcBtn.innerText = "Processing...";
+
+    const extBtn = document.getElementById('extensionPromoBtn');
+    const histBtn = document.getElementById('historyToggleBtn');
+    if(extBtn) extBtn.classList.add('shrunk');
+    if(histBtn) histBtn.classList.add('shrunk');
 
     try {
         if (playlistId) {
@@ -93,9 +98,22 @@ async function handleCalculation() {
         } else if (videoListSection) {
             videoListSection.style.display = 'none'; 
         }
+
+        const totalDurationStr = `${hoursEl.innerText}h ${minutesEl.innerText}m ${secondsEl.innerText}s`;
+        
+        let title = "YouTube Video";
+        if (videoDataList.length > 0) {
+            if (videoDataList.length > 1) {
+                title = "Playlist: " + videoDataList[0].title.substring(0, 30) + "...";
+            } else {
+                title = videoDataList[0].title.substring(0, 40) + "...";
+            }
+        }
+
+        saveToHistory(url, title, videoDataList.length, totalDurationStr);
+
     } catch (error) {
         console.error(error);
-        
         alert("Error: " + error.message);
     } finally {
         calcBtn.disabled = false;
@@ -319,4 +337,79 @@ function formatSimpleTime(seconds) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const historyToggleBtn = document.getElementById('historyToggleBtn');
+    const historyDropdown = document.getElementById('historyDropdown');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    
+    if(historyToggleBtn) {
+        historyToggleBtn.addEventListener('click', (e) => {
+            historyDropdown.classList.toggle('show');
+            historyToggleBtn.classList.toggle('active'); 
+            e.stopPropagation();
+            renderHistory();
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (historyDropdown && historyDropdown.classList.contains('show') && !historyDropdown.contains(e.target)) {
+            historyDropdown.classList.remove('show');
+            historyToggleBtn.classList.remove('active'); 
+        }
+    });
+
+    if(clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', () => {
+            localStorage.removeItem('ytPlaylistHistory');
+            renderHistory();
+        });
+    }
+});
+
+function saveToHistory(url, title, videoCount, totalDurationStr) {
+    let history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
+    history = history.filter(item => item.url !== url);
+    
+    history.unshift({
+        url: url,
+        title: title || "YouTube Playlist",
+        videoCount: videoCount,
+        duration: totalDurationStr,
+        date: new Date().toLocaleDateString()
+    });
+
+    if (history.length > 10) history.pop();
+    localStorage.setItem('ytPlaylistHistory', JSON.stringify(history));
+}
+
+function renderHistory() {
+    const historyList = document.getElementById('historyList');
+    if(!historyList) return;
+    
+    let history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
+    
+    if (history.length === 0) {
+        historyList.innerHTML = '<li class="empty-history">No recent history.</li>';
+        return;
+    }
+
+    historyList.innerHTML = '';
+    history.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        li.onclick = () => {
+            document.getElementById('playlistUrl').value = item.url;
+            document.getElementById('historyDropdown').classList.remove('show');
+            document.getElementById('historyToggleBtn').classList.remove('active');
+            document.getElementById('calcBtn').click();
+        };
+        
+        li.innerHTML = `
+            <div class="history-title">${item.title}</div>
+            <div class="history-info">${item.videoCount} Videos • ${item.duration}</div>
+        `;
+        historyList.appendChild(li);
+    });
 }

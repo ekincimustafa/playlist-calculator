@@ -43,6 +43,26 @@
 
     <main class="main-wrapper" id="mainWrapper">
         
+        <div class="history-wrapper">
+            <button id="historyToggleBtn" class="history-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>History</span>
+            </button>
+            
+            <div id="historyDropdown" class="history-dropdown">
+                <div class="dropdown-header">
+                    Recent Calculations
+                    <span id="clearHistoryBtn" class="clear-btn">Clear</span>
+                </div>
+                <ul id="historyList" class="history-list">
+                    <li class="empty-history">No recent history.</li>
+                </ul>
+            </div>
+        </div>
+        
         <div class="input-section">
             <header>
                 <h1>
@@ -132,7 +152,7 @@
                         <input type="checkbox" checked>
                         <img src="https://i.ytimg.com/vi/dQw4w9WgXcQ/default.jpg">
                         <div class="video-info">
-                            <span class="v-title">Örnek Video Başlığı Buraya Gelecek</span>
+                            <span class="v-title">Example Video Title</span>
                             <span class="v-duration">12:30</span>
                         </div>
                     </li>
@@ -143,7 +163,7 @@
     <footer class="site-footer">
         <div class="footer-content">
             <p class="copyright">
-                © 2026 <strong>YTPlaylistCalculator</strong>. All rights reserved.
+                © 2026 <strong>ytplaylistcalculator</strong>. All rights reserved.
             </p>
             
             <div class="footer-links">
@@ -167,8 +187,11 @@
         </div>
     </footer>
 
-</body>
-</html>
-
+    <a href="#" id="extensionPromoBtn" class="extension-promo" target="_blank" title="Download our Chrome Extension">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a2 2 0 0 1 2 2v1h5a2 2 0 0 1 2 2v5h-1a2 2 0 0 0 0 4h1v5a2 2 0 0 1-2 2h-5v-1a2 2 0 0 0-4 0v1H5a2 2 0 0 1-2-2v-5h1a2 2 0 0 0 0-4H3V7a2 2 0 0 1 2-2h5V4a2 2 0 0 1 2-2z"></path>
+            </svg>
+            <span>Extension</span>
+        </a>
 </body>
 </html>
