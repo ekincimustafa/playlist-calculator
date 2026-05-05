@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Playlist Calculator",
+  "version": "1.0",
+  "description": "Calculate YouTube playlist durations instantly.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Calculate Playlist!"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "icons": {
+    "16": "16x16.png",
+    "48": "48x48.png",
+    "128": "128x128.png"
+  }
+}
