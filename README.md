@@ -7,13 +7,12 @@
   <br><br>
 
   [![Lighthouse Score](https://img.shields.io/badge/Lighthouse-100%2F100-success?style=for-the-badge&logo=lighthouse)](https://ytplaylistcalculator.com)
-  [![Chrome Extension](https://img.shields.io/badge/Chrome_Extension-Pending_Review-blue?style=for-the-badge&logo=googlechrome)](./extension/)
-  [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+  [![Chrome Extension](https://img.shields.io/badge/Chrome_Extension-Available_Now-success?style=for-the-badge&logo=googlechrome)](https://chromewebstore.google.com/detail/ecdjlbdgjnlmjhmdllgnfakocdcpaieg)  [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
   <h3>
     <a href="https://ytplaylistcalculator.com">🌐 Live Demo</a> &nbsp;·&nbsp;
-    <a href="#-chrome-extension-installation">🧩 Chrome Extension</a> &nbsp;·&nbsp;
+    <a href="https://chromewebstore.google.com/detail/ecdjlbdgjnlmjhmdllgnfakocdcpaieg">🧩 Chrome Extension</a> &nbsp;·&nbsp;
     <a href="#-installation-run-web-app-locally">⚙️ Local Setup</a> &nbsp;·&nbsp;
     <a href="#-developer">👨‍💻 Developer</a>
   </h3>
