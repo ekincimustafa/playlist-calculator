@@ -19,12 +19,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         currentUrl = tabs[0].url;
-        currentPId = extractPlaylistId(currentUrl);
-        currentVId = extractVideoId(currentUrl);
+        const parsedUrl = parseYouTubeUrl(currentUrl);
+        currentPId = parsedUrl.playlistId;
+        currentVId = parsedUrl.videoId;
 
-        if (currentUrl.includes("youtube.com/watch") || currentUrl.includes("youtube.com/playlist")) {
+        if (parsedUrl.isYouTube && (currentPId || currentVId)) {
             urlBox.innerText = currentUrl;
-            
+
             chrome.storage.local.get(['savedPId', 'savedVId', 'savedData', 'savedSpeed'], function(result) {
                 if ((currentPId && result.savedPId === currentPId) || (!currentPId && currentVId && result.savedVId === currentVId)) {
                     videoDataList = result.savedData || [];
@@ -32,19 +33,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                         speedRange.value = result.savedSpeed || 1;
                         speedValue.innerText = `${parseFloat(speedRange.value).toFixed(2)} x`;
                         const newIndex = extractIndex(currentUrl);
-                        
+
                         if (newIndex) {
                             videoDataList.forEach((item, idx) => {
-                                if ((idx + 1) < newIndex - 1) {
+                                if ((idx + 1) < newIndex) {
                                     item.active = false;
                                 }
                             });
                             saveExtensionState(currentPId, currentVId);
                         }
-                        
+
                         recalculateTotal();
                         renderVideoList();
-                        
+
                         resultCard.style.display = "block";
                         if (videoDataList.length > 1) manageVideosCard.style.display = "block";
                     }
@@ -107,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             data.videos.forEach((item, index) => {
                 let isVideoActive = true;
-                if (currentIndex && (index + 1) < currentIndex - 1) {
+                if (currentIndex && (index + 1) < currentIndex) {
                     isVideoActive = false; 
                 }
 
@@ -155,11 +156,11 @@ function updateUI(activeCount) {
     const h = Math.floor(realDuration / 3600);
     const m = Math.floor((realDuration % 3600) / 60);
     const s = Math.floor(realDuration % 60);
-    
+
     let timeString = "";
     if (h > 0) timeString += `${h}h `;
     timeString += `${m}m ${s}s`;
-    
+
     document.getElementById('totalTimeDisplay').innerText = timeString;
     document.getElementById('videoCount').innerText = activeCount;
 
@@ -182,7 +183,7 @@ function renderVideoList() {
         const li = document.createElement('li');
         li.className = 'video-item';
         li.onclick = (e) => toggleVideo(index, e);
-        
+
         li.innerHTML = `
             <input type="checkbox" ${video.active ? 'checked' : ''}>
             <img src="${video.thumb}" alt="thumb" loading="lazy">
@@ -203,7 +204,7 @@ function toggleVideo(index, event) {
         videoDataList[index].active = event.target.checked;
     }
     recalculateTotal(); 
-    
+
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         const cUrl = tabs[0].url;
         saveExtensionState(extractPlaylistId(cUrl), extractVideoId(cUrl));
@@ -220,19 +221,64 @@ function recalculateTotal() {
     updateUI(activeCount); 
 }
 
+function parseYouTubeUrl(input) {
+    const rawUrl = input.trim();
+    if (!rawUrl) {
+        return { isYouTube: false, playlistId: null, videoId: null, index: null };
+    }
+
+    const normalizedUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+
+    try {
+        const parsed = new URL(normalizedUrl);
+        const hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        const pathnameParts = parsed.pathname.split('/').filter(Boolean);
+        const isYouTube = hostname === 'youtu.be' ||
+            ['youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname);
+
+        if (!isYouTube) {
+            return { isYouTube: false, playlistId: null, videoId: null, index: null };
+        }
+
+        let playlistId = parsed.searchParams.get('list');
+        let videoId = null;
+
+        if (hostname === 'youtu.be') {
+            videoId = pathnameParts[0] || null;
+        } else if (parsed.pathname === '/watch') {
+            videoId = parsed.searchParams.get('v');
+        } else if (['shorts', 'embed', 'live'].includes(pathnameParts[0])) {
+            videoId = pathnameParts[1] || null;
+        }
+
+        if (playlistId && !/^[A-Za-z0-9_-]+$/.test(playlistId)) {
+            playlistId = null;
+        }
+
+        if (videoId && !/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+            videoId = null;
+        }
+
+        const rawIndex = parsed.searchParams.get('index');
+        const parsedIndex = rawIndex ? Number.parseInt(rawIndex, 10) : null;
+        const index = Number.isInteger(parsedIndex) && parsedIndex > 0 ? parsedIndex : null;
+
+        return { isYouTube: true, playlistId, videoId, index };
+    } catch {
+        return { isYouTube: false, playlistId: null, videoId: null, index: null };
+    }
+}
+
 function extractPlaylistId(url) {
-    const match = url.match(/[&?]list=([^&]+)/);
-    return match ? match[1] : null;
+    return parseYouTubeUrl(url).playlistId;
 }
 
 function extractVideoId(url) {
-    const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
-    return match ? match[1] : null;
+    return parseYouTubeUrl(url).videoId;
 }
 
 function extractIndex(url) {
-    const match = url.match(/[&?]index=(\d+)/);
-    return match ? parseInt(match[1]) : null;
+    return parseYouTubeUrl(url).index;
 }
 
 function parseDuration(d) {
