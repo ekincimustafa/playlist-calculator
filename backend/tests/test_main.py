@@ -50,6 +50,9 @@ def playlist_page(*video_ids, next_page_token=None):
 
 class BackendTests(unittest.TestCase):
     def setUp(self):
+        self.guard_patch = patch.object(main, "resource_guard", main.ResourceGuard(cache_ttl=0))
+        self.guard_patch.start()
+        self.addCleanup(self.guard_patch.stop)
         self.key_patch = patch.object(main, "API_KEY", DUMMY_KEY)
         self.key_patch.start()
         self.addCleanup(self.key_patch.stop)
