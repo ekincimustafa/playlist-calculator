@@ -28,7 +28,7 @@
 
 **YouTube Playlist Length Calculator** was built to solve a simple but frustrating problem: YouTube doesn't tell you how long a playlist is. This tool does exactly that — instantly, for free, with no ads.
 
-Whether you're planning a study session, binge-watching a course, or just curious how long your queue is, this tool gives you a clear answer. It goes beyond a basic total sum by offering playback speed adjustments, per-video management, a "finish at" prediction, and a persistent local history — all without requiring a login or storing any data on a server.
+Whether you're planning a study session, binge-watching a course, or just curious how long your queue is, this tool gives you a clear answer. It goes beyond a basic total sum by offering playback speed adjustments, per-video management, a "finish at" prediction, and a persistent local history without requiring a login. Calculation history stays on your device; the backend temporarily caches YouTube metadata for up to five minutes.
 
 Available both as a **web app** at [ytplaylistcalculator.com](https://ytplaylistcalculator.com) and as a **Chrome Extension** for seamless in-browser use.
 
@@ -46,12 +46,12 @@ Available both as a **web app** at [ytplaylistcalculator.com](https://ytplaylist
 - **🧩 Official Chrome Extension** — A lightweight Manifest V3 popup extension. Calculate playlist durations directly from your browser toolbar without leaving the YouTube tab.
 
 ### History & Persistence
-- **💾 Local History Storage** — Your recent calculations and custom speed preferences are saved entirely in your browser's local storage. No account needed, no data sent to a server.
+- **💾 Local History Storage** — Your recent calculations are saved in your browser's local storage. Video/playlist IDs are sent to the backend and YouTube for calculation; successful metadata is temporarily cached. See [backend cache and resource limits](backend/README.md).
 
 ### Quality & Design
 - **🚀 100/100 Lighthouse Score** — Optimized for Performance, Accessibility, Best Practices, and SEO.
 - **📱 Fully Responsive** — Clean, dark-mode-ready, minimalist UI that works perfectly on desktop, tablet, and mobile.
-- **🔒 Ad-Free & Privacy-First** — No trackers, no ads, no data collection.
+- **🔒 Ad-Free & Local History** — No ads or login requirement; calculation history remains in your browser. The website includes Google Analytics.
 
 ---
 

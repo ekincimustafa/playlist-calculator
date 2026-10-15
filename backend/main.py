@@ -2,13 +2,19 @@ import os
 import re
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+
+if __package__:
+    from .resource_guard import ResourceGuard
+else:
+    from resource_guard import ResourceGuard
 
 load_dotenv()
 API_KEY = os.getenv("YOUTUBE_API_KEY")
 YOUTUBE_REQUEST_TIMEOUT = (5, 15)  # Connect timeout, then read inactivity timeout.
 INVALID_UPSTREAM_RESPONSE = "YouTube returned an invalid response. Please try again."
+resource_guard = ResourceGuard()
 
 app = FastAPI()
 
@@ -22,6 +28,7 @@ app.add_middleware(
 
 
 def request_youtube(resource, params):
+    resource_guard.consume_upstream_request()
     try:
         response = requests.get(
             f"https://www.googleapis.com/youtube/v3/{resource}",
@@ -90,7 +97,7 @@ def read_root():
     return {"message": "Playlist Calculator Backend is running 🚀"}
 
 @app.get("/api/playlist/{playlist_id}")
-def get_playlist_data(playlist_id: str):
+def get_playlist_data(playlist_id: str, response: Response):
     if len(playlist_id) > 256 or not re.fullmatch(r"[A-Za-z0-9_-]+", playlist_id):
         raise HTTPException(status_code=400, detail="Invalid playlist ID.")
 
@@ -100,6 +107,13 @@ def get_playlist_data(playlist_id: str):
     if playlist_id.startswith("RD"):
         raise HTTPException(status_code=400, detail="YouTube Mix playlists are auto-generated and not supported by the API.")
 
+    result, cache_status = resource_guard.get_or_load(("playlist", playlist_id), lambda: load_playlist_data(playlist_id))
+    response.headers["X-Playlist-Cache"] = cache_status
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+def load_playlist_data(playlist_id):
     videos = []
     next_page_token = None
     while True:
@@ -138,13 +152,20 @@ def get_playlist_data(playlist_id: str):
     return {"total_videos": len(videos), "videos": videos}
 
 @app.get("/api/video/{video_id}")
-def get_single_video_data(video_id: str):
+def get_single_video_data(video_id: str, response: Response):
     if len(video_id) != 11 or not re.fullmatch(r"[A-Za-z0-9_-]+", video_id):
         raise HTTPException(status_code=400, detail="Invalid video ID.")
 
     if not API_KEY:
         raise HTTPException(status_code=500, detail="API Key is missing!")
 
+    result, cache_status = resource_guard.get_or_load(("video", video_id), lambda: load_single_video_data(video_id))
+    response.headers["X-Playlist-Cache"] = cache_status
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+def load_single_video_data(video_id):
     vid_response = request_youtube("videos", {
         "part": "snippet,contentDetails",
         "id": video_id,
