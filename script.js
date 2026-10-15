@@ -138,7 +138,12 @@ function embedPlayer(id, type) {
         ? `https://www.youtube.com/embed/videoseries?list=${id}`
         : `https://www.youtube.com/embed/${id}`;
         
-    videoPlayer.innerHTML = `<iframe src="${src}" allowfullscreen></iframe>`;
+    const iframe = document.createElement('iframe');
+    iframe.src = src;
+    iframe.allowFullscreen = true;
+    iframe.title = type === 'playlist' ? 'YouTube playlist player' : 'YouTube video player';
+
+    videoPlayer.replaceChildren(iframe);
 }
 
 async function fetchFromBackend(pid) {
@@ -288,21 +293,35 @@ function renderVideoList() {
     const listEl = document.getElementById('videoList');
     if(!listEl) return;
     
-    listEl.innerHTML = ''; 
+    listEl.replaceChildren();
 
     videoDataList.forEach((video, index) => {
         const li = document.createElement('li');
         li.className = 'video-item';
         li.onclick = (e) => toggleVideo(index, e);
         
-        li.innerHTML = `
-            <input type="checkbox" ${video.active ? 'checked' : ''}>
-            <img src="${video.thumb}" alt="thumb" loading="lazy">
-            <div class="video-info">
-                <span class="v-title">${index + 1}. ${video.title}</span>
-                <span class="v-duration">${formatSimpleTime(video.duration)}</span>
-            </div>
-        `;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = video.active;
+
+        const thumbnail = document.createElement('img');
+        thumbnail.src = video.thumb;
+        thumbnail.alt = 'thumb';
+        thumbnail.loading = 'lazy';
+
+        const info = document.createElement('div');
+        info.className = 'video-info';
+
+        const title = document.createElement('span');
+        title.className = 'v-title';
+        title.textContent = `${index + 1}. ${video.title}`;
+
+        const duration = document.createElement('span');
+        duration.className = 'v-duration';
+        duration.textContent = formatSimpleTime(video.duration);
+
+        info.append(title, duration);
+        li.append(checkbox, thumbnail, info);
         listEl.appendChild(li);
     });
 }
@@ -388,14 +407,17 @@ function renderHistory() {
     const historyList = document.getElementById('historyList');
     if(!historyList) return;
     
-    let history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
-    
+    const history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
+    historyList.replaceChildren();
+
     if (history.length === 0) {
-        historyList.innerHTML = '<li class="empty-history">No recent history.</li>';
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'empty-history';
+        emptyItem.textContent = 'No recent history.';
+        historyList.appendChild(emptyItem);
         return;
     }
 
-    historyList.innerHTML = '';
     history.forEach(item => {
         const li = document.createElement('li');
         li.className = 'history-item';
@@ -406,10 +428,15 @@ function renderHistory() {
             document.getElementById('calcBtn').click();
         };
         
-        li.innerHTML = `
-            <div class="history-title">${item.title}</div>
-            <div class="history-info">${item.videoCount} Videos • ${item.duration}</div>
-        `;
+        const title = document.createElement('div');
+        title.className = 'history-title';
+        title.textContent = item.title;
+
+        const info = document.createElement('div');
+        info.className = 'history-info';
+        info.textContent = `${item.videoCount} Videos • ${item.duration}`;
+
+        li.append(title, info);
         historyList.appendChild(li);
     });
 }

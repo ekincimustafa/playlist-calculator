@@ -176,21 +176,34 @@ function updateUI(activeCount) {
 function renderVideoList() {
     const listEl = document.getElementById('videoList');
     if(!listEl) return;
-    listEl.innerHTML = ''; 
+    listEl.replaceChildren();
 
     videoDataList.forEach((video, index) => {
         const li = document.createElement('li');
         li.className = 'video-item';
         li.onclick = (e) => toggleVideo(index, e);
         
-        li.innerHTML = `
-            <input type="checkbox" ${video.active ? 'checked' : ''}>
-            <img src="${video.thumb}" alt="thumb" loading="lazy">
-            <div>
-                <span class="v-title">${index + 1}. ${video.title}</span>
-                <span class="v-duration">${formatSimpleTime(video.duration)}</span>
-            </div>
-        `;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = video.active;
+
+        const thumbnail = document.createElement('img');
+        thumbnail.src = video.thumb;
+        thumbnail.alt = 'thumb';
+        thumbnail.loading = 'lazy';
+
+        const info = document.createElement('div');
+
+        const title = document.createElement('span');
+        title.className = 'v-title';
+        title.textContent = `${index + 1}. ${video.title}`;
+
+        const duration = document.createElement('span');
+        duration.className = 'v-duration';
+        duration.textContent = formatSimpleTime(video.duration);
+
+        info.append(title, duration);
+        li.append(checkbox, thumbnail, info);
         listEl.appendChild(li);
     });
 }
