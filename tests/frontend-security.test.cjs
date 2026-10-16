@@ -15,7 +15,7 @@ class Element {
         this.children = [];
         this.style = {};
         this.listeners = new Map();
-        this.value = '';
+        this._value = '';
         this.className = '';
         this.disabled = false;
         this._text = '';
@@ -27,6 +27,13 @@ class Element {
             toggle: name => classes.has(name) ? classes.delete(name) : classes.add(name)
         };
     }
+    set value(value) {
+        // Native range inputs clamp custom values below min, unlike text inputs.
+        this._value = this.type === 'range'
+            ? String(Math.min(Number(this.max), Math.max(Number(this.min), Number(value))))
+            : String(value);
+    }
+    get value() { return this._value; }
     set textContent(value) {
         this._text = String(value);
         this.children = [];
@@ -37,6 +44,11 @@ class Element {
     set innerText(value) { this.textContent = value; }
     get innerText() { return this.textContent; }
     set innerHTML(value) {
+        // Only the speed badge uses trusted, constant SVG markup.
+        if (this.id === 'speedValue') {
+            this.textContent = value.replace(/<svg[\s\S]*<\/svg>/, '').trim();
+            return;
+        }
         // Fail any tested render path that sends markup to the HTML parser.
         if (value !== '') throw new Error('Unsafe HTML parsing in external-data render path');
         this.replaceChildren();
@@ -59,7 +71,7 @@ class Element {
     }
 }
 
-function app(kind) {
+function app(kind, options = {}) {
     const elements = new Map();
     const ready = [];
     const storage = new Map();
@@ -71,12 +83,16 @@ function app(kind) {
         { id: 'lmnopqrstuv', title: 'Second video', thumbnail: 'https://i.ytimg.com/b.jpg', duration: 'PT5M' }
     ];
     const get = id => {
-        if (!elements.has(id)) elements.set(id, new Element());
+        if (!elements.has(id)) {
+            const element = new Element();
+            element.id = id;
+            elements.set(id, element);
+        }
         return elements.get(id);
     };
-    get('speedRange').value = '1';
+    Object.assign(get('speedRange'), { type: 'range', min: '1', max: '5', value: '1' });
     const context = vm.createContext({
-        Date, URL,
+        Date: options.Date || Date, URL,
         console: { error: error => { throw error; } },
         alert: value => alerts.push(value),
         document: {
@@ -92,9 +108,9 @@ function app(kind) {
             removeItem: key => storage.delete(key)
         },
         chrome: {
-            tabs: { query: (_options, callback) => callback([{ url: 'https://www.youtube.com/playlist?list=PLtest123' }]) },
+            tabs: { query: (_options, callback) => callback([{ url: options.tabUrl || 'https://www.youtube.com/playlist?list=PLtest123' }]) },
             storage: { local: {
-                get: (_keys, callback) => callback({}),
+                get: (_keys, callback) => callback(options.savedState || {}),
                 set: state => savedExtensionStates.push(state)
             } }
         },
@@ -112,12 +128,21 @@ function app(kind) {
     };
 }
 
-test('crafted playlist input stays inside one iframe property', async () => {
+test('crafted playlist input is rejected before a request or embed', async () => {
     const a = app('web');
     await a.ready();
     const craftedId = 'PLtest"></iframe>' + attack;
     a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=' + craftedId;
     await a.get('calcBtn').click();
+    assert.equal(a.get('videoPlayer').children.length, 0);
+    assert.equal(a.calls.length, 0);
+    assert.deepEqual(a.alerts, ['Please enter a valid YouTube link!']);
+});
+
+test('direct embed rendering still treats crafted IDs as one property', () => {
+    const a = app('web');
+    const craftedId = 'PLtest"></iframe>' + attack;
+    a.run(`embedPlayer(${JSON.stringify(craftedId)}, 'playlist')`);
     const player = a.get('videoPlayer');
     assert.equal(player.children.length, 1);
     const iframe = player.children[0];
@@ -234,4 +259,115 @@ test('history selection and clearing retain the current behavior and labels', as
     assert.equal(items[0].className, 'empty-history');
     assert.equal(items[0].textContent, 'No recent history.');
     assert.equal(a.storage.has('ytPlaylistHistory'), false);
+});
+
+for (const kind of ['web', 'extension']) {
+    test(`${kind}: supported YouTube URL formats resolve the correct IDs`, () => {
+        const a = app(kind);
+        for (const url of [
+            'https://www.youtube.com/watch?v=abcdefghijk',
+            'youtube.com/watch?v=abcdefghijk',
+            'https://m.youtube.com/watch?v=abcdefghijk',
+            'https://music.youtube.com/watch?v=abcdefghijk',
+            'https://youtu.be/abcdefghijk?t=12',
+            'https://www.youtube.com/shorts/abcdefghijk',
+            'https://www.youtube.com/embed/abcdefghijk',
+            'https://www.youtube.com/live/abcdefghijk',
+        ]) {
+            assert.equal(a.run(`extractVideoId(${JSON.stringify(url)})`), 'abcdefghijk', url);
+        }
+        for (const url of [
+            'https://www.youtube.com/playlist?list=PLtest123',
+            'https://youtu.be/abcdefghijk?list=PLtest123',
+        ]) {
+            assert.equal(a.run(`extractPlaylistId(${JSON.stringify(url)})`), 'PLtest123', url);
+        }
+    });
+
+    test(`${kind}: unrelated domains and malformed IDs cannot trigger API work`, async () => {
+        const invalidUrls = [
+            'https://other.example/watch?v=abcdefghijk&list=PLtest123',
+            'https://youtube.com.other.example/watch?v=abcdefghijk',
+            'https://youtube.com@other.example/watch?v=abcdefghijk',
+            'https://www.youtube.com/watch?v=abcdefghijk_extra',
+            'https://www.youtube.com/playlist?list=PLtest%22%3E',
+            'not a URL',
+        ];
+        for (const url of invalidUrls) {
+            const a = app(kind, { tabUrl: url });
+            await a.ready();
+            if (kind === 'web') a.get('playlistUrl').value = url;
+            await a.get('calcBtn').click();
+            assert.equal(a.calls.length, 0, url);
+            assert.equal(a.get('videoList').children.length, 0, url);
+        }
+    });
+}
+
+test('custom speeds below 1x keep totals, average, finish time and selection synchronized', async () => {
+    const now = Date.parse('2026-10-16T10:00:00Z');
+    class FrozenDate extends Date {
+        constructor(...args) { super(...(args.length ? args : [now])); }
+    }
+    const finish = seconds => new Date(now + seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const a = app('web', { Date: FrozenDate });
+    await a.ready();
+    a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+    await a.get('calcBtn').click();
+    a.run('updateCustomSpeed(0.25)');
+    assert.equal(a.get('speedValue').innerText, '0.25x');
+    assert.equal(a.get('speedRange').value, '1'); // Same native clamp as the real browser.
+    assert.equal(a.get('hours').innerText, '1');
+    assert.equal(a.get('minutes').innerText, '0');
+    assert.equal(a.get('avgVideo').innerText, '30m 0s');
+    assert.equal(a.get('finishTime').innerText, finish(3600));
+
+    await a.get('videoList').children[0].click({ target: a.get('videoList').children[0] });
+    assert.equal(a.get('minutes').innerText, '20');
+    assert.equal(a.get('avgVideo').innerText, '20m 0s');
+    assert.equal(a.get('finishTime').innerText, finish(1200));
+
+    a.get('speedRange').value = '2';
+    await a.get('speedRange').dispatch('input');
+    assert.equal(a.get('minutes').innerText, '2');
+    assert.equal(a.get('seconds').innerText, '30');
+    assert.equal(a.get('avgVideo').innerText, '2m 30s');
+    assert.equal(a.get('finishTime').innerText, finish(150));
+    a.run('updateCustomSpeed(0.5)');
+    await a.get('calcBtn').click();
+    assert.equal(a.get('minutes').innerText, '30');
+    assert.equal(a.get('avgVideo').innerText, '15m 0s');
+    assert.equal(a.get('finishTime').innerText, finish(1800));
+});
+
+test('custom speed bounds remain 0.25x through 5x with a 1x invalid-value fallback', () => {
+    const a = app('web');
+    for (const [input, expected] of [[-1, 0.25], [9, 5], ['invalid', 1], [1.37, 1.37]]) {
+        a.run(`updateCustomSpeed(${JSON.stringify(input)})`);
+        assert.equal(a.get('speedValue').innerText, expected.toFixed(2) + 'x');
+    }
+});
+
+test('extension playlist index selects from the current video on a fresh calculation', async () => {
+    const a = app('extension', { tabUrl: 'https://www.youtube.com/watch?v=lmnopqrstuv&list=PLtest123&index=2' });
+    await a.ready();
+    await a.get('calcBtn').click();
+    assert.equal(a.get('videoCount').innerText, '1');
+    assert.equal(a.get('totalTimeDisplay').innerText, '5m 0s');
+    assert.deepEqual(Array.from(a.run('videoDataList.map(v => v.active)')), [false, true]);
+});
+
+test('extension playlist index also applies when restoring saved results', async () => {
+    const savedData = [100, 200, 300].map((duration, index) => ({
+        id: String(index), title: 'Video ' + index, duration, active: true, thumb: ''
+    }));
+    const a = app('extension', {
+        tabUrl: 'https://www.youtube.com/playlist?list=PLtest123&index=3',
+        savedState: { savedPId: 'PLtest123', savedData, savedSpeed: 1 },
+    });
+    await a.ready();
+    assert.equal(a.calls.length, 0);
+    assert.equal(a.get('videoCount').innerText, '1');
+    assert.equal(a.get('totalTimeDisplay').innerText, '5m 0s');
+    assert.deepEqual(Array.from(a.run('videoDataList.map(v => v.active)')), [false, false, true]);
 });

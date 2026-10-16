@@ -29,6 +29,8 @@ const videoListSection = document.getElementById('videoListSection');
 // --- GLOBAL STATE ---
 let totalSecondsGlobal = 0; 
 let videoDataList = [];     
+// Custom speeds can be below the slider's 1x minimum.
+let playbackSpeed = parseFloat(speedInput.value) || 1;
 
 // --- EVENT LISTENERS ---
 calcBtn.addEventListener('click', handleCalculation);
@@ -39,10 +41,11 @@ urlInput.addEventListener('keypress', (e) => {
 
 speedInput.addEventListener('input', function() {
     const val = this.value;
-    if (speedValue) speedValue.innerHTML = `${parseFloat(val).toFixed(2)} x `; 
+    playbackSpeed = parseFloat(val) || 1;
+    if (speedValue) speedValue.textContent = `${playbackSpeed.toFixed(2)} x `;
 
     if (totalSecondsGlobal > 0) {
-        const currentCount = videoCountEl ? videoCountEl.innerText : 0;
+        const currentCount = videoDataList.filter(video => video.active).length;
         updateUI(currentCount); 
     }
 });
@@ -56,14 +59,15 @@ speedInput.addEventListener('touchstart', enableSnapMode);
  */
 async function handleCalculation() {
     const url = urlInput.value;
-    let playlistId = extractPlaylistId(url);
-    const videoId = extractVideoId(url);
+    const parsedUrl = parseYouTubeUrl(url);
+    let playlistId = parsedUrl.playlistId;
+    const videoId = parsedUrl.videoId;
 
     if (!playlistId && !videoId) {
         alert("Please enter a valid YouTube link!");
         return;
     }
- 
+
     if (playlistId && playlistId.startsWith("RD")) {
         if (videoId) {
             playlistId = null; 
@@ -89,10 +93,10 @@ async function handleCalculation() {
             embedPlayer(videoId, 'video');
             await fetchSingleVideoFromBackend(videoId); 
         }
-        
+
         mainWrapper.classList.add('expanded');
         document.getElementById('resultSection').style.display = 'flex';
-        
+
         if (playlistId && videoListSection) {
             videoListSection.style.display = 'block';
         } else if (videoListSection) {
@@ -100,7 +104,7 @@ async function handleCalculation() {
         }
 
         const totalDurationStr = `${hoursEl.innerText}h ${minutesEl.innerText}m ${secondsEl.innerText}s`;
-        
+
         let title = "YouTube Video";
         if (videoDataList.length > 0) {
             if (videoDataList.length > 1) {
@@ -123,21 +127,62 @@ async function handleCalculation() {
 
 // --- UTILITY FUNCTIONS ---
 
+function parseYouTubeUrl(input) {
+    const rawUrl = input.trim();
+    if (!rawUrl) return { playlistId: null, videoId: null };
+
+    const normalizedUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+
+    try {
+        const parsed = new URL(normalizedUrl);
+        const hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        const pathnameParts = parsed.pathname.split('/').filter(Boolean);
+
+        let playlistId = null;
+        let videoId = null;
+
+        if (hostname === 'youtu.be') {
+            videoId = pathnameParts[0] || null;
+            playlistId = parsed.searchParams.get('list');
+        } else if (['youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
+            playlistId = parsed.searchParams.get('list');
+
+            if (parsed.pathname === '/watch') {
+                videoId = parsed.searchParams.get('v');
+            } else if (['shorts', 'embed', 'live'].includes(pathnameParts[0])) {
+                videoId = pathnameParts[1] || null;
+            }
+        } else {
+            return { playlistId: null, videoId: null };
+        }
+
+        if (playlistId && !/^[A-Za-z0-9_-]+$/.test(playlistId)) {
+            playlistId = null;
+        }
+
+        if (videoId && !/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+            videoId = null;
+        }
+
+        return { playlistId, videoId };
+    } catch {
+        return { playlistId: null, videoId: null };
+    }
+}
+
 function extractPlaylistId(url) {
-    const match = url.match(/[&?]list=([^&]+)/);
-    return match ? match[1] : null;
+    return parseYouTubeUrl(url).playlistId;
 }
 
 function extractVideoId(url) {
-    const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
-    return match ? match[1] : null;
+    return parseYouTubeUrl(url).videoId;
 }
 
 function embedPlayer(id, type) {
     const src = type === 'playlist' 
         ? `https://www.youtube.com/embed/videoseries?list=${id}`
         : `https://www.youtube.com/embed/${id}`;
-        
+
     const iframe = document.createElement('iframe');
     iframe.src = src;
     iframe.allowFullscreen = true;
@@ -148,14 +193,14 @@ function embedPlayer(id, type) {
 
 async function fetchFromBackend(pid) {
     videoDataList = [];
-    
+
     const res = await fetch(`${BACKEND_URL}/api/playlist/${pid}`);
     const data = await res.json();
 
     if (!res.ok) {
         throw new Error(data.detail || "Failed to fetch playlist data.");
     }
-    
+
     data.videos.forEach(item => {
         videoDataList.push({
             id: item.id,
@@ -172,7 +217,7 @@ async function fetchFromBackend(pid) {
 
 async function fetchSingleVideoFromBackend(vid) {
     videoDataList = [];
-    
+
     const res = await fetch(`${BACKEND_URL}/api/video/${vid}`);
     const data = await res.json();
 
@@ -205,14 +250,13 @@ function parseDuration(d) {
 
 
 function updateUI(count) {
-    const speed = parseFloat(speedInput.value) || 1; 
-    const realDuration = totalSecondsGlobal / speed;
+    const realDuration = totalSecondsGlobal / playbackSpeed;
 
     displayTime(realDuration);
 
     if (videoCountEl) videoCountEl.innerText = count;
-    
-    const avg = count > 0 ? totalSecondsGlobal / count : 0;
+
+    const avg = count > 0 ? realDuration / count : 0;
     const m = Math.floor(avg / 60);
     const s = Math.floor(avg % 60);
     if (avgEl) avgEl.innerText = `${m}m ${s}s`;
@@ -234,11 +278,11 @@ function displayTime(sec) {
 speedValue.addEventListener('click', function() {
     if (this.querySelector('input')) return;
 
-    const currentSpeed = parseFloat(this.innerText); 
+    const currentSpeed = playbackSpeed;
     const input = document.createElement('input');
-    
+
     input.type = 'number';
-    input.min = '1'; input.max = '5'; input.step = '0.01';
+    input.min = '0.25'; input.max = '5'; input.step = '0.01';
     input.value = currentSpeed;
     input.className = 'speed-input-edit'; 
 
@@ -246,10 +290,19 @@ speedValue.addEventListener('click', function() {
     this.appendChild(input);
     input.focus(); 
 
+    let committed = false;
+    const commitSpeed = () => {
+        if (committed) return;
+        committed = true;
+        updateCustomSpeed(input.value);
+    };
     input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') updateCustomSpeed(input.value);
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            commitSpeed();
+        }
     });
-    input.addEventListener('blur', () => updateCustomSpeed(input.value));
+    input.addEventListener('blur', commitSpeed);
     input.addEventListener('click', (e) => e.stopPropagation());
 });
 
@@ -260,6 +313,7 @@ function updateCustomSpeed(val) {
     if (newSpeed < 0.25) newSpeed = 0.25;
     if (newSpeed > 5) newSpeed = 5;
 
+    playbackSpeed = newSpeed;
     speedInput.step = '0.01'; 
     speedInput.value = newSpeed;
 
@@ -272,7 +326,8 @@ function updateCustomSpeed(val) {
     `;
 
     if (totalSecondsGlobal > 0) {
-        displayTime(totalSecondsGlobal / newSpeed);
+        const currentCount = videoDataList.filter(video => video.active).length;
+        updateUI(currentCount);
     }
 }
 
@@ -281,7 +336,7 @@ const listContainer = document.getElementById('videoListContainer');
 
 listToggle.addEventListener('click', () => {
     listToggle.classList.toggle('active');
-    
+
     if (listContainer.style.maxHeight) {
         listContainer.style.maxHeight = null;
     } else {
@@ -292,14 +347,14 @@ listToggle.addEventListener('click', () => {
 function renderVideoList() {
     const listEl = document.getElementById('videoList');
     if(!listEl) return;
-    
+
     listEl.replaceChildren();
 
     videoDataList.forEach((video, index) => {
         const li = document.createElement('li');
         li.className = 'video-item';
         li.onclick = (e) => toggleVideo(index, e);
-        
+
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = video.active;
@@ -362,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyToggleBtn = document.getElementById('historyToggleBtn');
     const historyDropdown = document.getElementById('historyDropdown');
     const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-    
+
     if(historyToggleBtn) {
         historyToggleBtn.addEventListener('click', (e) => {
             historyDropdown.classList.toggle('show');
@@ -390,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function saveToHistory(url, title, videoCount, totalDurationStr) {
     let history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
     history = history.filter(item => item.url !== url);
-    
+
     history.unshift({
         url: url,
         title: title || "YouTube Playlist",
@@ -406,7 +461,7 @@ function saveToHistory(url, title, videoCount, totalDurationStr) {
 function renderHistory() {
     const historyList = document.getElementById('historyList');
     if(!historyList) return;
-    
+
     const history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
     historyList.replaceChildren();
 
@@ -427,7 +482,7 @@ function renderHistory() {
             document.getElementById('historyToggleBtn').classList.remove('active');
             document.getElementById('calcBtn').click();
         };
-        
+
         const title = document.createElement('div');
         title.className = 'history-title';
         title.textContent = item.title;
