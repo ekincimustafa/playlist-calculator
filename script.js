@@ -29,6 +29,8 @@ const videoListSection = document.getElementById('videoListSection');
 // --- GLOBAL STATE ---
 let totalSecondsGlobal = 0; 
 let videoDataList = [];     
+// Custom speeds can be below the slider's 1x minimum.
+let playbackSpeed = parseFloat(speedInput.value) || 1;
 
 // --- EVENT LISTENERS ---
 calcBtn.addEventListener('click', handleCalculation);
@@ -39,7 +41,8 @@ urlInput.addEventListener('keypress', (e) => {
 
 speedInput.addEventListener('input', function() {
     const val = this.value;
-    if (speedValue) speedValue.innerHTML = `${parseFloat(val).toFixed(2)} x `; 
+    playbackSpeed = parseFloat(val) || 1;
+    if (speedValue) speedValue.textContent = `${playbackSpeed.toFixed(2)} x `;
 
     if (totalSecondsGlobal > 0) {
         const currentCount = videoDataList.filter(video => video.active).length;
@@ -247,8 +250,7 @@ function parseDuration(d) {
 
 
 function updateUI(count) {
-    const speed = parseFloat(speedInput.value) || 1; 
-    const realDuration = totalSecondsGlobal / speed;
+    const realDuration = totalSecondsGlobal / playbackSpeed;
 
     displayTime(realDuration);
 
@@ -276,11 +278,11 @@ function displayTime(sec) {
 speedValue.addEventListener('click', function() {
     if (this.querySelector('input')) return;
 
-    const currentSpeed = parseFloat(this.innerText); 
+    const currentSpeed = playbackSpeed;
     const input = document.createElement('input');
 
     input.type = 'number';
-    input.min = '1'; input.max = '5'; input.step = '0.01';
+    input.min = '0.25'; input.max = '5'; input.step = '0.01';
     input.value = currentSpeed;
     input.className = 'speed-input-edit'; 
 
@@ -288,10 +290,19 @@ speedValue.addEventListener('click', function() {
     this.appendChild(input);
     input.focus(); 
 
+    let committed = false;
+    const commitSpeed = () => {
+        if (committed) return;
+        committed = true;
+        updateCustomSpeed(input.value);
+    };
     input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') updateCustomSpeed(input.value);
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            commitSpeed();
+        }
     });
-    input.addEventListener('blur', () => updateCustomSpeed(input.value));
+    input.addEventListener('blur', commitSpeed);
     input.addEventListener('click', (e) => e.stopPropagation());
 });
 
@@ -302,6 +313,7 @@ function updateCustomSpeed(val) {
     if (newSpeed < 0.25) newSpeed = 0.25;
     if (newSpeed > 5) newSpeed = 5;
 
+    playbackSpeed = newSpeed;
     speedInput.step = '0.01'; 
     speedInput.value = newSpeed;
 
