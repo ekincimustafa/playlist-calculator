@@ -5,6 +5,29 @@ or from the repository root with `uvicorn backend.main:app`.
 Set `YOUTUBE_API_KEY` in the server environment. Install runtime dependencies
 with `python -m pip install -r requirements.txt`.
 
+## Browser access (CORS)
+
+The production browser allowlist in `main.CORS_ALLOWED_ORIGINS` contains only:
+
+- `https://ytplaylistcalculator.com`
+- `https://www.ytplaylistcalculator.com`
+- `chrome-extension://ecdjlbdgjnlmjhmdllgnfakocdcpaieg` (the published extension)
+
+Only `GET` is allowed by CORS. Cross-origin credentials are disabled, and
+additional request headers such as `Authorization` are not allowed. The
+existing website and popup use ordinary, credential-free `fetch` requests;
+no extension permission or Web Store update is required for this change.
+
+For local development, add the exact local frontend origin or unpacked
+extension origin to a **local** allowlist. Unpacked extension IDs can differ
+from the published ID. Do not deploy wildcard origins, `null`, or a pattern
+that trusts every Chrome extension. Origins contain no trailing slash or path.
+
+CORS controls whether a browser exposes a response to another origin; it is
+not authentication or a quota firewall. Simple cross-origin requests can still
+reach the server, and non-browser clients can omit or spoof `Origin`. The
+resource limits below and Google Cloud quotas remain necessary.
+
 ## Cache and resource limits
 
 Successful video/playlist results are temporarily stored in **worker memory**.
