@@ -15,15 +15,20 @@ API_KEY = os.getenv("YOUTUBE_API_KEY")
 YOUTUBE_REQUEST_TIMEOUT = (5, 15)  # Connect timeout, then read inactivity timeout.
 INVALID_UPSTREAM_RESPONSE = "YouTube returned an invalid response. Please try again."
 resource_guard = ResourceGuard()
+CORS_ALLOWED_ORIGINS = [
+    "https://ytplaylistcalculator.com",
+    "https://www.ytplaylistcalculator.com",
+    "chrome-extension://ecdjlbdgjnlmjhmdllgnfakocdcpaieg",
+]
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=[],
 )
 
 
