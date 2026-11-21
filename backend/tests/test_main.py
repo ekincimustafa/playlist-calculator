@@ -150,6 +150,41 @@ class BackendTests(unittest.TestCase):
             self.assertEqual(call.kwargs["timeout"], (5, 15))
             self.assertFalse(call.kwargs["allow_redirects"])
 
+    def test_repeated_page_tokens_stop_before_another_upstream_request(self):
+        for tokens in [("same", "same"), ("first", "second", "first")]:
+            with self.subTest(tokens=tokens):
+                responses = []
+                for token in tokens:
+                    responses.extend([
+                        playlist_page(VIDEO_ID, next_page_token=token),
+                        youtube_response({"items": [video_item()]}),
+                    ])
+                self.get.reset_mock()
+                self.get.side_effect = responses
+                response = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+                self.assertEqual(response.status_code, 502)
+                self.assertEqual(response.json(), {"detail": main.INVALID_UPSTREAM_RESPONSE})
+                self.assertEqual(self.get.call_count, len(tokens) * 2)
+
+    def test_pagination_failure_releases_capacity_and_does_not_cache_partial_results(self):
+        guard = main.ResourceGuard(max_active=1)
+        with patch.object(main, "resource_guard", guard):
+            self.get.side_effect = [
+                playlist_page(VIDEO_ID, next_page_token="same"),
+                youtube_response({"items": [video_item()]}),
+                playlist_page(VIDEO_ID, next_page_token="same"),
+                youtube_response({"items": [video_item()]}),
+            ]
+            self.assertEqual(self.client.get(f"/api/playlist/{PLAYLIST_ID}").status_code, 502)
+            self.get.side_effect = [playlist_page(VIDEO_ID), youtube_response({"items": [video_item()]})]
+            recovered = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+            self.assertEqual(recovered.status_code, 200)
+            self.assertEqual(recovered.json()["total_videos"], 1)
+            self.assertEqual(recovered.headers["x-playlist-cache"], "MISS")
+            cached = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+            self.assertEqual(cached.headers["x-playlist-cache"], "HIT")
+            self.assertEqual(self.get.call_count, 6)
+
     def test_unavailable_playlist_items_and_duplicate_videos_keep_existing_behavior(self):
         self.get.side_effect = [
             playlist_page(VIDEO_ID, OTHER_VIDEO_ID, next_page_token="second"),

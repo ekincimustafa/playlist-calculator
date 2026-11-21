@@ -10,6 +10,9 @@
 
 - Güncel `main` üzerinden ayrı bir dal aç. Değişiklikleri görev kapsamında tut, ilgili testleri çalıştır ve incelemeye hazır PR aç. `main`e birleştirme ve canlı yayın için görevde açık yetki bulunmalı.
 - Kabul edilen kapsamdaki rutin kodlama, test ve hata gidermeyi tamamla. Ürün kararı, önemli kapsam değişikliği, ücretli hizmet veya eksik hesap erişimi gerektiğinde proje sahibini dahil et.
+- Ana geliştirme koordinasyonunu mevcut sohbetten yürüt. Proje kayıtlarını görevler arasındaki bağlam kaynağı olarak kullan.
+- Her paket sonunda Türkçe olarak değişikliği, kullanıcıya etkisini, çalıştırılan testleri ve sonuçlarını, PR bağlantısını ve sıradaki işi bildir. `docs/STATUS.md` dosyasını güncelle.
+- Düzeltmeler, gerekli bakım ve güvenlik aşaması tamamlandığında yeni özelliklerin önceliklerini proje sahibiyle belirle.
 - İş sırası için [yol haritasını](docs/ROADMAP.md), doğrulanmış bulgular ve test sonuçları için [durum kaydını](docs/STATUS.md) kullan. İlgili görev tamamlandığında durum kaydını güncelle.
 
 ## Testler
