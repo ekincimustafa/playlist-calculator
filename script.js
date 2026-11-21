@@ -58,6 +58,8 @@ speedInput.addEventListener('touchstart', enableSnapMode);
  * Main Controller
  */
 async function handleCalculation() {
+    if (calcBtn.disabled) return;
+
     const url = urlInput.value;
     const parsedUrl = parseYouTubeUrl(url);
     let playlistId = parsedUrl.playlistId;
