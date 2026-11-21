@@ -93,7 +93,7 @@ function app(kind, options = {}) {
     Object.assign(get('speedRange'), { type: 'range', min: '1', max: '5', value: '1' });
     const context = vm.createContext({
         Date: options.Date || Date, URL,
-        console: { error: error => { throw error; } },
+        console: { error: options.onError || (error => { throw error; }) },
         alert: value => alerts.push(value),
         document: {
             getElementById: get,
@@ -116,6 +116,7 @@ function app(kind, options = {}) {
         },
         fetch: async url => {
             calls.push(url);
+            if (options.fetch) return options.fetch(url);
             return { ok: true, json: async () => ({ total_videos: videos.length, videos }) };
         }
     });
@@ -221,6 +222,83 @@ for (const kind of ['web', 'extension']) {
         assert.equal(a.alerts.length, 0);
     });
 }
+
+test('web: Enter during a pending calculation cannot mix results from two URLs', async () => {
+    const firstUrl = 'https://www.youtube.com/playlist?list=PLfirst';
+    const secondUrl = 'https://www.youtube.com/playlist?list=PLsecond';
+    const firstVideos = [
+        { id: 'abcdefghijk', title: 'First playlist video', duration: 'PT10M' },
+        { id: 'lmnopqrstuv', title: 'Another first playlist video', duration: 'PT5M' }
+    ];
+    const secondVideos = [{ id: 'wxyzabcdefg', title: 'Second playlist video', duration: 'PT42S' }];
+    const response = videos => ({ ok: true, json: async () => ({ total_videos: videos.length, videos }) });
+    let resolveFirst;
+    const firstResponse = new Promise(resolve => { resolveFirst = resolve; });
+    const a = app('web', {
+        fetch: url => url.endsWith('/PLfirst') ? firstResponse : response(secondVideos)
+    });
+    await a.ready();
+    const calcBtn = a.get('calcBtn');
+    const urlInput = a.get('playlistUrl');
+    urlInput.value = firstUrl;
+    const firstCalculation = calcBtn.click();
+    assert.equal(calcBtn.disabled, true);
+
+    urlInput.value = secondUrl;
+    await urlInput.dispatch('keypress', { key: 'Enter' });
+    // Let the second response finish if Enter started a request.
+    await new Promise(setImmediate);
+    const stillProcessing = calcBtn.disabled;
+    resolveFirst(response(firstVideos));
+    await firstCalculation;
+
+    const history = () => JSON.parse(a.storage.get('ytPlaylistHistory'));
+    assert.equal(a.get('videoCount').innerText, '2');
+    assert.equal(a.get('minutes').innerText, '15');
+    assert.equal(a.get('seconds').innerText, '0');
+    assert.equal(a.get('videoList').children.length, 2);
+    assert.deepEqual(history().map(item => [item.url, item.videoCount, item.duration]), [[firstUrl, 2, '0h 15m 0s']]);
+    assert.equal(a.get('videoPlayer').children[0].src, 'https://www.youtube.com/embed/videoseries?list=PLfirst');
+    assert.equal(stillProcessing, true);
+    assert.equal(a.calls.length, 1);
+    assert.equal(calcBtn.disabled, false);
+    assert.equal(calcBtn.innerText, 'Calculate Duration');
+
+    await calcBtn.click();
+    assert.equal(a.calls.length, 2);
+    assert.equal(a.get('videoCount').innerText, '1');
+    assert.equal(a.get('seconds').innerText, '42');
+    assert.deepEqual(history().map(item => item.url), [secondUrl, firstUrl]);
+});
+
+test('web: a failed calculation releases the button for a retry', async () => {
+    const errors = [];
+    let fail = true;
+    const a = app('web', {
+        onError: error => errors.push(error.message),
+        fetch: async () => ({
+            ok: !fail,
+            json: async () => fail
+                ? { detail: 'Backend unavailable' }
+                : { total_videos: 1, videos: [{ id: 'abcdefghijk', title: 'Video', duration: 'PT1M' }] }
+        })
+    });
+    await a.ready();
+    a.get('playlistUrl').value = 'https://www.youtube.com/watch?v=abcdefghijk';
+    const calcBtn = a.get('calcBtn');
+    await calcBtn.click();
+
+    assert.deepEqual(errors, ['Backend unavailable']);
+    assert.deepEqual(a.alerts, ['Error: Backend unavailable']);
+    assert.equal(calcBtn.disabled, false);
+    assert.equal(calcBtn.innerText, 'Calculate Duration');
+
+    fail = false;
+    await calcBtn.click();
+    assert.equal(a.calls.length, 2);
+    assert.equal(a.get('videoCount').innerText, '1');
+    assert.equal(a.get('minutes').innerText, '1');
+});
 
 test('all history display fields are literal text, including stored metadata', () => {
     const a = app('web');
