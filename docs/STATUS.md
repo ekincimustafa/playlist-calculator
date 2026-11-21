@@ -97,3 +97,28 @@
 - Yeniden doğrulama: Node 24.22.3 ile **38 frontend başarılı**; Python 3.12.14 ve temiz requirements-dev.txt ortamında **48 backend başarılı**; `pip check` başarılı; `-W error::DeprecationWarning` ile **48 backend başarılı**. Backend API anahtarı boş çalıştırıldı, testler sahte anahtar ve taklit YouTube yanıtları kullandı. Gerçek YouTube kotası veya üretim backend'i kullanılmadı.
 - Entegrasyon [PR #11](https://github.com/ekincimustafa/playlist-calculator/pull/11) main hedefli açıldı. `77331f681338995998d87afd096e8df58db29f49` için [GitHub Actions Tests koşusu](https://github.com/ekincimustafa/playlist-calculator/actions/runs/44884630607) başarılı: frontend ve backend işleri, bağımlılık kurulumu, pip check ve deprecation uyarılarını hata sayan backend adımı başarılı. GitHub PR’ı çakışmasız birleştirilebilir olarak doğruladı. Bu kayıt commit’inden sonra son başın CI sonucu ayrıca kontrol edilecek. Mevcut CI, iki frontend test dosyasını ve backend çapraz testini keşfediyor; salt okunur izinler, beş dakika sınırı, Node 24/Python 3.12, boş API anahtarı, pip check ve deprecation kontrolleri korundu.
 - **Yayın gereksinimleri:** İnceleme ve ayrıca main/yayın yetkisi sonrası önce Render backend'inin position ve sayfalama korumasını içeren sürümü devreye alınmalı; ardından webde HTML/CSS/script.js ile `extension/calculation-request.js` birlikte yayınlanmalı. Eski backend ile istemci dizi sırasına geri dönebilir; eksik video konumlarının doğruluğu için yeni backend gerekli. Eklenti kullanıcılarının yeni popup ve ortak istek dosyasını alması için ayrı sürüm artırımı, paketleme ve Chrome Web Store yayını gerekir; bu PR bunları yayınlamaz. Eski konumsuz playlist kaydı yeniden hesaplanır. İstemci iptali sunucuda başlamış işi durdurmayı garanti etmez. Yalnızca mock API ile web/popup dağıtım doğrulaması yapılmalı; gerçek kota kullanan doğrulama bu görevde yapılmayacak.
+
+## PR #11 yayın ön kontrolü — 21 Kasım 2026
+
+- Güncel PR başı incelenen `f39ca8bfa9cc7e545129eb9093692fdb08d3da35` ile aynı. Bu commit’in [CI koşusu](https://github.com/ekincimustafa/playlist-calculator/actions/runs/44884709596) başarılı. Frontend/backend işleri ve pip check/deprecation adımları tekrar doğrulandı. Yerelde aynı commit ile 38 frontend ve 48 backend testi yeniden geçti. Gerçek YouTube kotası kullanılmadı.
+- Kullanıcı yalnızca gerekli erişim ve güvenli sıra sağlanırsa PR #11’in birleştirilmesini ve web/backend yayınını yetkilendirdi. Chrome Web Store yayını kapsam dışında. Yayın koşulları henüz sağlanmadığından PR #11 ve kaynak PR #7–#10 açık tutuldu.
+- GitHub Actions geçmişinde son başarılı Pages build/deploy, main üzerindeki `ebe0cdc9b9548ce721c67aefd759d29be828b9ce` commit’ine ait [44881954342](https://github.com/ekincimustafa/playlist-calculator/actions/runs/44881954342). Depodaki CNAME ytplaylistcalculator.com alanını tanımlıyor. Güncel Pages ayarlarını okuyan API erişimi reddedildi. Geçmişteki başarılı yayın güncel ayarların tam doğrulaması sayılmadı.
+- Depoda Render blueprint/dağıtım yapılandırması bulunmuyor. README FastAPI başlangıç seçeneklerini açıklıyor, fakat Render’daki gerçek kaynak dalı, root directory, build/start komutları, otomatik yayın ayarı ve önceki canlı commit erişim olmadan belirlenemedi. Render eklentisi bulundu ancak bağlı değil. Ortamda Render erişim değişkeni veya CLI bulunamadı.
+- Backend kök adresi ve web script.js için yapılan HTTP kontrolleri ortamın ağ geçidinde ProxyError ile engellendi. Servislerin sağlığı veya yayınlanan commit bu kontrollerle doğrulanamadı. YouTube veri uçlarına istek gönderilmedi.
+
+### Yayın sırası
+
+1. Render erişimi sağlanınca servis kimliği, kaynak depo/dal, root/build/start/health ayarları ve otomatik yayın durumu okunacak. Önceki başarılı canlı backend commit’i kaydedilecek. Pages’in güncel kaynak/yayın ayarı da doğrulanacak.
+2. Otomatik yayın sırası kontrol altına alınarak backend, entegrasyon dalındaki incelenen `f39ca8b` commit’iyle önce yayınlanacak. Render dağıtım kaydında commit ve live durumu, ardından kota harcamayan kök sağlık kontrolü doğrulanacak. Mevcut ortam değişkenleri korunacak.
+3. Backend doğrulamasından sonra PR #11 başı ve CI tekrar kontrol edilip beklenen baş SHA ile main’e birleştirilecek. Pages’in birleştirme commit’ine ait build/deploy sonucu ve sunulan HTML/JS dosyaları doğrulanacak. UI kontrolleri mock API kullanacak.
+4. Başarılı birleştirme sonrasında #7–#10, değişikliklerinin #11 ile alındığı açıklamasıyla kapatılacak. Kapanış, yayın sonuçları ve gerçek commit’ler bu kayda eklenecek.
+
+### Geri dönüş
+
+- Backend ön yayını başarısız olursa PR #11 birleştirilmeden Render önceki kaydedilmiş başarılı dağıtıma döndürülecek. Web mevcut sürümde kalacak.
+- Web yayını sonrası sorun çıkarsa önce main’de #11’in değişiklikleri geri alınarak önceki web davranışı yayınlanacak ve Pages sonucu doğrulanacak. Gerekirse ardından backend kaydedilmiş önceki başarılı Render dağıtımına döndürülecek. Eski web yeni backend ile uyumlu olduğu için Pages hatasında backend’i hemen geri almak gerekmiyor.
+- Şu anda gerçek önceki Render commit’i ve dashboard ayarları bilinmediğinden geri dönüş hedefi Render erişimiyle kesinleştirilecek.
+
+### Kullanıcıdan gereken işlem
+
+Render eklentisini bağlamak, servis ayarları ve dağıtım geçmişini bu sohbetten doğrulamamı sağlar. Manuel ilerlemek tercih edilirse önce Render’daki playlist backend servisinin Settings/Deploys ekranlarından kaynak dalı, otomatik yayın durumu, root/build/start/health ayarları ve mevcut canlı commit paylaşılmalı. Gizli anahtarlar paylaşılmamalı. Bu bilgilerle Pages ayarı doğrulandıktan sonra backend entegrasyon dalından yayınlanıp Render’daki commit/live kaydı kontrol edilecek. Mevcut aşamada birleştirme veya yayın yapılmadı.
