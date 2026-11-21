@@ -54,7 +54,7 @@
 
 ## Beşinci paket ve güvenlik incelemesi
 
-- Dal `codex/security-pagination`, güncel main (`ebe0cdc`) üzerinden açıldı. PR #7, #8 ve #9 ayrı incelemede bekliyor. Test sayıları main tabanındaki bu dala ait.
+- Dal `codex/security-pagination`, güncel main (`ebe0cdc`) üzerinden açıldı. [PR #10](https://github.com/ekincimustafa/playlist-calculator/pull/10) incelemeye açık. PR #7, #8 ve #9 ayrı incelemede bekliyor. Test sayıları main tabanındaki bu dala ait.
 - Backend’de sayfalama döngüsü doğrulandı. YouTube aynı `nextPageToken` değerini yeniden döndürdüğünde mevcut döngü yeni istekler üretmeye devam ediyordu. Token kovası zamanla dolduğu için bu kontrol tek başına bir hesaplamanın sona ermesini garanti etmiyordu. Tekrarlanan belirteç artık yeni upstream isteği öncesinde HTTP 502 üretiyor. Geçerli büyük listelerin sayfa sayısına yeni bir sınır eklenmedi.
 - İki regresyon testi doğrudan tekrar ve birden fazla belirteçten oluşan döngüyü, istek sayısını, kısmi sonucun önbelleğe alınmamasını, kapasitenin serbest kalmasını ve sonraki başarılı hesaplamanın önbelleğe alınmasını doğruluyor. Döngü testi eski kodda başarısız oldu.
 - 19 frontend ve 44 backend testi geçti. Backend testleri temiz bakım ortamında kullanımdan kaldırma uyarılarını hata sayarak çalıştırıldı. Gerçek YouTube kotası kullanılmadı.
