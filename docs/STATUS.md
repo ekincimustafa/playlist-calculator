@@ -1,5 +1,14 @@
 # Proje durumu
 
+## Chrome eklentisi 1.1.0 paket hazırlığı — 21 Kasım 2026
+
+- `main` üzerindeki `d58612f` taban alındı. Manifest sürümü `1.0` değerinden `1.1.0` değerine yükseltildi; ürün JavaScript kodu, Manifest V3 ve izinler değiştirilmedi.
+- `node --test tests/*.test.cjs`: 38/38 başarılı. Backend kodu değişmediği için backend testleri bu paketleme adımında yeniden çalıştırılmadı. Gerçek YouTube kotası kullanılmadı.
+- ZIP kökünde manifest, popup HTML/JS, ortak calculation-request.js ve manifestteki üç PNG ikon bulunuyor. ZIP bütünlüğü, kaynaklarla byte eşitliği, script yükleme sırası ve ikon boyutları doğrulandı.
+- Bu adım yeni bir gerçek Chrome/popup etkileşim testi içermiyor. Mevcut davranışlar taklit API ile çalışan test paketiyle doğrulandı.
+- Mağazadaki mevcut/taslak sürüm doğrulanamadı. Yüklemeden önce 1.1.0 sürümünün paneldeki sürümden büyük olduğu kontrol edilmeli.
+- Paket hazırlama ve yükleme adımları [eklenti yayın rehberinde](EXTENSION_RELEASE.md). Chrome Web Store'a yükleme, incelemeye gönderme veya yayın yapılmadı. Hazırlık PR'ı main'e birleştirilmedi.
+
 21 Kasım 2026 tarihinde GitHub’daki `main` dalı `10d5b5b` sürümündeydi. Önceki inceleme aynı sürümü temel alıyordu. Başlangıçta 17 frontend ve 42 backend testi geçti.
 
 | Bulgu | Doğrulama ve durum |
