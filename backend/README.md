@@ -79,3 +79,10 @@ node --test tests/frontend-security.test.cjs
 ```
 
 Tests use a dummy API key and mock Google calls; they do not spend live quota.
+
+GitHub Actions runs the frontend and backend suites on pull requests and pushes
+to `main`, using Node.js 24 and Python 3.12. Backend test dependencies use
+`httpx2`, as required by the current Starlette TestClient. The backend job checks
+dependency compatibility with `pip check` and treats deprecation warnings as
+errors so dependency changes surface during review. It runs with an empty API
+key and requires no repository secrets.
