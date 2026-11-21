@@ -270,6 +270,19 @@
             font-weight: bold;
         }
 
+        .cancel-calculation {
+            margin-top: 10px;
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+        }
+        .cancel-calculation[hidden] { display: none; }
+        .calculation-status { margin: 10px 0 0; font-size: 13px; }
+        .calculation-status:empty { display: none; }
+        .calculation-status.error { color: #b42318; }
     </style>
 </head>
 <body>
@@ -293,6 +306,8 @@
         </div>
 
         <button class="btn" id="calcBtn">Calculate Duration</button>
+        <button id="cancelCalculationBtn" class="cancel-calculation" type="button" hidden>Cancel</button>
+        <p id="calculationStatus" class="calculation-status" role="status" aria-live="polite" aria-atomic="true"></p>
     </div>
 
     <div class="card" id="resultCard">
@@ -324,6 +339,7 @@
 
     <a href="https://ytplaylistcalculator.com" target="_blank" class="footer-link">Open in ytplaylistcalculator.com ↗</a>
     
+    <script src="calculation-request.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

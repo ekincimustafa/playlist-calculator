@@ -28,12 +28,19 @@ const videoListSection = document.getElementById('videoListSection');
 
 // --- GLOBAL STATE ---
 let totalSecondsGlobal = 0; 
+let activeCalculation = null;
+const cancelCalculationBtn = document.getElementById('cancelCalculationBtn');
+const calculationStatus = document.getElementById('calculationStatus');
 let videoDataList = [];     
 // Custom speeds can be below the slider's 1x minimum.
 let playbackSpeed = parseFloat(speedInput.value) || 1;
 
 // --- EVENT LISTENERS ---
 calcBtn.addEventListener('click', handleCalculation);
+cancelCalculationBtn.addEventListener('click', () => {
+    activeCalculation?.abort(new DOMException('Calculation cancelled. You can try again.', 'AbortError'));
+});
+window.addEventListener('pagehide', () => activeCalculation?.abort(new DOMException('Page closed.', 'AbortError')));
 
 urlInput.addEventListener('keypress', (e) => { 
     if(e.key === 'Enter') handleCalculation() 
@@ -66,7 +73,8 @@ async function handleCalculation() {
     const videoId = parsedUrl.videoId;
 
     if (!playlistId && !videoId) {
-        alert("Please enter a valid YouTube link!");
+        calculationStatus.textContent = "Please enter a valid YouTube link!";
+        calculationStatus.classList.add('error');
         return;
     }
 
@@ -74,11 +82,16 @@ async function handleCalculation() {
         if (videoId) {
             playlistId = null; 
         } else {
-            alert("YouTube Mix playlists are auto-generated and cannot be calculated. Please enter a standard playlist or video link.");
+            calculationStatus.textContent = "YouTube Mix playlists are auto-generated and cannot be calculated. Please enter a standard playlist or video link.";
+            calculationStatus.classList.add('error');
             return;
         }
     }
 
+    activeCalculation = new AbortController();
+    cancelCalculationBtn.hidden = false;
+    calculationStatus.classList.remove('error');
+    calculationStatus.textContent = 'Calculating… Large playlists may take a moment.';
     calcBtn.disabled = true;
     calcBtn.innerText = "Processing...";
 
@@ -89,11 +102,11 @@ async function handleCalculation() {
 
     try {
         if (playlistId) {
+            await fetchFromBackend(playlistId, activeCalculation, parsedUrl.index);
             embedPlayer(playlistId, 'playlist');
-            await fetchFromBackend(playlistId, parsedUrl.index);
         } else {
+            await fetchSingleVideoFromBackend(videoId, activeCalculation);
             embedPlayer(videoId, 'video');
-            await fetchSingleVideoFromBackend(videoId); 
         }
 
         mainWrapper.classList.add('expanded');
@@ -119,9 +132,14 @@ async function handleCalculation() {
         saveToHistory(url, title, videoDataList.length, totalDurationStr);
 
     } catch (error) {
-        console.error(error);
-        alert("Error: " + error.message);
+        calculationStatus.textContent = error.message;
+        if (error.name !== 'AbortError') calculationStatus.classList.add('error');
     } finally {
+        if (!calculationStatus.classList.contains('error') && !activeCalculation.signal.aborted) {
+            calculationStatus.textContent = '';
+        }
+        activeCalculation = null;
+        cancelCalculationBtn.hidden = true;
         calcBtn.disabled = false;
         calcBtn.innerText = "Calculate Duration";
     }
@@ -196,53 +214,31 @@ function embedPlayer(id, type) {
     videoPlayer.replaceChildren(iframe);
 }
 
-async function fetchFromBackend(pid, startIndex) {
-    videoDataList = [];
-
-    const res = await fetch(`${BACKEND_URL}/api/playlist/${pid}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-        throw new Error(data.detail || "Failed to fetch playlist data.");
-    }
-
-    data.videos.forEach((item, index) => {
-        videoDataList.push({
-            id: item.id,
-            title: item.title,
-            thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
-            duration: parseDuration(item.duration),
-            position: item.position,
-            active: !startIndex || (item.position || index + 1) >= startIndex
-        });
-    });
-
-    recalculateTotal(); 
-    renderVideoList();  
+async function fetchFromBackend(pid, controller, startIndex) {
+    const data = await fetchCalculationData(`${BACKEND_URL}/api/playlist/${pid}`, controller);
+    videoDataList = data.videos.map((item, index) => ({
+        id: item.id,
+        title: item.title,
+        thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
+        duration: parseDuration(item.duration),
+        position: item.position,
+        active: !startIndex || (item.position || index + 1) >= startIndex
+    }));
+    recalculateTotal();
+    renderVideoList();
 }
 
-async function fetchSingleVideoFromBackend(vid) {
-    videoDataList = [];
-
-    const res = await fetch(`${BACKEND_URL}/api/video/${vid}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-        throw new Error(data.detail || "Failed to fetch video data.");
-    }
-
-    data.videos.forEach(item => {
-        videoDataList.push({
-            id: item.id,
-            title: item.title,
-            thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
-            duration: parseDuration(item.duration),
-            active: true 
-        });
-    });
-
-    recalculateTotal(); 
-    renderVideoList();  
+async function fetchSingleVideoFromBackend(vid, controller) {
+    const data = await fetchCalculationData(`${BACKEND_URL}/api/video/${vid}`, controller);
+    videoDataList = data.videos.map(item => ({
+        id: item.id,
+        title: item.title,
+        thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
+        duration: parseDuration(item.duration),
+        active: true
+    }));
+    recalculateTotal();
+    renderVideoList();
 }
 
 function parseDuration(d) {

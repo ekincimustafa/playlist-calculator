@@ -38,6 +38,7 @@
     <link rel="icon" href="favicon.png" sizes="48x48" type="image/png">
     
     <link rel="apple-touch-icon" href="extension/128x128.png">    
+    <script src="extension/calculation-request.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body>
@@ -110,6 +111,8 @@
                 </div>
 
                 <button id="calcBtn">Calculate Duration</button>
+                <button id="cancelCalculationBtn" class="cancel-calculation" type="button" hidden>Cancel</button>
+                <p id="calculationStatus" class="calculation-status" role="status" aria-live="polite" aria-atomic="true"></p>
             </div>
         </div>
 
