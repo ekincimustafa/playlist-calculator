@@ -41,3 +41,12 @@
 - Chromium ile web ve popup HTML girişlerinden başarı, iptal ve yeniden deneme akışları taklit dış isteklerle kontrol edildi.
 - Ana geliştirme süreci, paket sonu raporları ve yetki sınırları `AGENTS.md` dosyasına kaydedildi.
 - Sıradaki paket otomatik testlerin ve gerekli bakımın tamamlanması. Ardından güvenlik incelemesi ve doğrulanan bulguların düzeltmeleri gelecek. Yeni özelliklerin öncelikleri bu aşamalardan sonra proje sahibiyle belirlenecek.
+
+
+## Dördüncü paket
+
+- Dal `codex/automated-tests-maintenance`, `main` (`ebe0cdc`) üzerinden açıldı. [PR #9](https://github.com/ekincimustafa/playlist-calculator/pull/9) incelemeye açık. PR #7 ve PR #8 incelemeye açık. Bu daldaki test sayıları main tabanını gösteriyor. Bu PR, o paketlerin kod değişikliklerini içermiyor.
+- GitHub Actions, her PR ve main güncellemesinde Node.js 24 ile frontend testlerini ve Python 3.12 ile backend testlerini ayrı işlerde çalıştırıyor. İşler beş dakika ile sınırlı, depo erişimi salt okunur ve API anahtarı boş. Testler YouTube yanıtlarını taklit ediyor.
+- Starlette TestClient uyarısının kaynağı olan `httpx` test bağımlılığı `httpx2` olarak güncellendi. Temiz sanal ortamda kurulum ve `pip check` başarılı. 19 frontend ve 42 backend testi geçti. Backend testleri kullanımdan kaldırma uyarılarını hata sayarak da başarılı oldu. Gerçek YouTube kotası kullanılmadı.
+- Çalıştırma koşulları backend README dosyasına eklendi. Önceki paketlerin durumları ve geliştirme talimatları kayıtlarda korundu.
+- Sıradaki iş güvenlik incelemesi ve doğrulanan bulguların düzeltmeleri. Yeni özellikler bu aşamadan sonra proje sahibiyle önceliklendirilecek.
