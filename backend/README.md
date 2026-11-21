@@ -75,7 +75,7 @@ From the repository root:
 ```sh
 python -m pip install -r backend/requirements-dev.txt
 python -m unittest discover -s backend/tests -v
-node --test tests/frontend-security.test.cjs
+node --test tests/*.test.cjs
 ```
 
 Tests use a dummy API key and mock Google calls; they do not spend live quota.

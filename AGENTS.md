@@ -20,7 +20,7 @@
 Komutları depo kökünden çalıştır. Backend test bağımlılıkları için `python -m pip install -r backend/requirements-dev.txt` komutunu kullan.
 
 ```sh
-node --test tests/frontend-security.test.cjs
+node --test tests/*.test.cjs
 python -m unittest discover -s backend/tests -v
 ```
 

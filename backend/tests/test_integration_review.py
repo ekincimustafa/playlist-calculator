@@ -1,4 +1,4 @@
-"""Local-only cross-PR regression: positions, loop failure, retry and cache."""
+"""Cross-PR regression: positions, loop failure, retry and cache."""
 import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
