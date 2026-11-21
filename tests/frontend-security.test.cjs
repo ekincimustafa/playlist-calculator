@@ -437,7 +437,7 @@ test('extension playlist index selects from the current video on a fresh calcula
 
 test('extension playlist index also applies when restoring saved results', async () => {
     const savedData = [100, 200, 300].map((duration, index) => ({
-        id: String(index), title: 'Video ' + index, duration, active: true, thumb: ''
+        id: String(index), title: 'Video ' + index, duration, active: true, thumb: '', position: index + 1
     }));
     const a = app('extension', {
         tabUrl: 'https://www.youtube.com/playlist?list=PLtest123&index=3',
@@ -448,4 +448,93 @@ test('extension playlist index also applies when restoring saved results', async
     assert.equal(a.get('videoCount').innerText, '1');
     assert.equal(a.get('totalTimeDisplay').innerText, '5m 0s');
     assert.deepEqual(Array.from(a.run('videoDataList.map(v => v.active)')), [false, false, true]);
+});
+
+for (const kind of ['web', 'extension']) {
+    test(`${kind}: playlist positions preserve gaps and duplicate entries when applying index`, async () => {
+        const url = 'https://www.youtube.com/watch?v=abcdefghijk&list=PLtest123&index=3';
+        const videos = [
+            { id: 'abcdefghijk', title: 'Repeated', duration: 'PT10M', position: 1 },
+            { id: 'lmnopqrstuv', title: 'After missing video', duration: 'PT5M', position: 3 },
+            { id: 'abcdefghijk', title: 'Repeated', duration: 'PT10M', position: 4 }
+        ];
+        const a = app(kind, { tabUrl: url, fetch: async () => ({ ok: true, json: async () => ({ videos }) }) });
+        await a.ready();
+        if (kind === 'web') a.get('playlistUrl').value = url;
+        await a.get('calcBtn').click();
+        assert.deepEqual(Array.from(a.run('videoDataList.map(v => v.active)')), [false, true, true]);
+        assert.equal(a.run('totalSecondsGlobal'), 900);
+        assert.deepEqual(a.get('videoList').children.map(row => row.children[2].children[0].textContent),
+            ['1. Repeated', '3. After missing video', '4. Repeated']);
+        const duplicateRow = a.get('videoList').children[2];
+        await duplicateRow.click({ target: duplicateRow });
+        assert.equal(a.run('totalSecondsGlobal'), 300);
+        if (kind === 'extension') {
+            assert.deepEqual(Array.from(a.savedExtensionStates.at(-1).savedData, v => v.position), [1, 3, 4]);
+        }
+    });
+
+    test(`${kind}: invalid indexes use all videos and an index past the end selects none`, async () => {
+        for (const [index, expected] of [['0', 900], ['-1', 900], ['2bad', 900], ['1.5', 900], ['9007199254740992', 900], ['', 900], ['3', 0]]) {
+            const url = 'https://www.youtube.com/playlist?list=PLtest123&index=' + index;
+            const a = app(kind, { tabUrl: url });
+            await a.ready();
+            if (kind === 'web') a.get('playlistUrl').value = url;
+            await a.get('calcBtn').click();
+            assert.equal(a.run('totalSecondsGlobal'), expected, index);
+        }
+        const url = 'https://www.youtube.com/watch?v=abcdefghijk&index=99';
+        const a = app(kind, { tabUrl: url });
+        await a.ready();
+        if (kind === 'web') a.get('playlistUrl').value = url;
+        await a.get('calcBtn').click();
+        assert.equal(a.run('totalSecondsGlobal'), 900);
+    });
+}
+
+test('extension: legacy playlist data waits for recalculation and is replaced with positioned data', async () => {
+    const a = app('extension', {
+        tabUrl: 'https://www.youtube.com/playlist?list=PLtest123&index=3',
+        savedState: { savedPId: 'PLtest123', savedData: [{ id: 'abcdefghijk', duration: 600, active: true }], savedSpeed: 2 },
+        fetch: async () => ({ ok: true, json: async () => ({ videos: [
+            { id: 'abcdefghijk', title: 'Video', duration: 'PT10M', position: 3 }
+        ] }) })
+    });
+    await a.ready();
+    assert.equal(a.calls.length, 0);
+    assert.equal(a.get('videoList').children.length, 0);
+    assert.equal(a.get('calcBtn').disabled, false);
+    await a.get('calcBtn').click();
+    assert.equal(a.calls.length, 1);
+    assert.equal(a.get('videoCount').innerText, '1');
+    assert.equal(a.get('totalTimeDisplay').innerText, '5m 0s');
+    assert.equal(a.savedExtensionStates.at(-1).savedData[0].position, 3);
+});
+
+test('extension: restored positions apply index without moving gaps or resetting manual exclusions', async () => {
+    const a = app('extension', {
+        tabUrl: 'https://www.youtube.com/playlist?list=PLtest123&index=3',
+        savedState: { savedPId: 'PLtest123', savedSpeed: 2, savedData: [
+            { id: 'a', title: 'First', duration: 600, active: true, position: 1 },
+            { id: 'b', title: 'Third', duration: 300, active: true, position: 3 },
+            { id: 'a', title: 'Repeat', duration: 600, active: false, position: 4 }
+        ] }
+    });
+    await a.ready();
+    assert.equal(a.calls.length, 0);
+    assert.equal(a.get('totalTimeDisplay').innerText, '2m 30s');
+    assert.deepEqual(Array.from(a.run('videoDataList.map(v => v.active)')), [false, true, false]);
+});
+
+test('extension: legacy single-video results remain usable and ignore playlist index', async () => {
+    const a = app('extension', {
+        tabUrl: 'https://www.youtube.com/watch?v=abcdefghijk&index=99',
+        savedState: { savedVId: 'abcdefghijk', savedSpeed: 2, savedData: [
+            { id: 'abcdefghijk', title: 'Video', duration: 600, active: true }
+        ] }
+    });
+    await a.ready();
+    assert.equal(a.calls.length, 0);
+    assert.equal(a.get('totalTimeDisplay').innerText, '5m 0s');
+    assert.equal(a.get('videoCount').innerText, '1');
 });

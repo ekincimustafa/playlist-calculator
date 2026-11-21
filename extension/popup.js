@@ -29,14 +29,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             chrome.storage.local.get(['savedPId', 'savedVId', 'savedData', 'savedSpeed'], function(result) {
                 if ((currentPId && result.savedPId === currentPId) || (!currentPId && currentVId && result.savedVId === currentVId)) {
                     videoDataList = result.savedData || [];
+                    speedRange.value = result.savedSpeed || 1;
+                    speedValue.innerText = `${parseFloat(speedRange.value).toFixed(2)} x`;
+                    // Legacy playlist caches cannot recover positions of unavailable entries.
+                    if (currentPId && !videoDataList.every(item => Number.isSafeInteger(item.position) && item.position > 0)) {
+                        videoDataList = [];
+                    }
                     if(videoDataList.length > 0) {
-                        speedRange.value = result.savedSpeed || 1;
-                        speedValue.innerText = `${parseFloat(speedRange.value).toFixed(2)} x`;
                         const newIndex = extractIndex(currentUrl);
 
                         if (newIndex) {
-                            videoDataList.forEach((item, idx) => {
-                                if ((idx + 1) < newIndex) {
+                            videoDataList.forEach(item => {
+                                if (currentPId && item.position < newIndex) {
                                     item.active = false;
                                 }
                             });
@@ -108,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             data.videos.forEach((item, index) => {
                 let isVideoActive = true;
-                if (currentIndex && (index + 1) < currentIndex) {
+                if (currentPId && currentIndex && (item.position || index + 1) < currentIndex) {
                     isVideoActive = false; 
                 }
 
@@ -117,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     title: item.title,
                     thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
                     duration: parseDuration(item.duration),
+                    position: item.position,
                     active: isVideoActive 
                 });
             });
@@ -198,7 +203,7 @@ function renderVideoList() {
 
         const title = document.createElement('span');
         title.className = 'v-title';
-        title.textContent = `${index + 1}. ${video.title}`;
+        title.textContent = `${video.position || index + 1}. ${video.title}`;
 
         const duration = document.createElement('span');
         duration.className = 'v-duration';
@@ -274,8 +279,8 @@ function parseYouTubeUrl(input) {
         }
 
         const rawIndex = parsed.searchParams.get('index');
-        const parsedIndex = rawIndex ? Number.parseInt(rawIndex, 10) : null;
-        const index = Number.isInteger(parsedIndex) && parsedIndex > 0 ? parsedIndex : null;
+        const parsedIndex = /^\d+$/.test(rawIndex || '') ? Number(rawIndex) : null;
+        const index = Number.isSafeInteger(parsedIndex) && parsedIndex > 0 ? parsedIndex : null;
 
         return { isYouTube: true, playlistId, videoId, index };
     } catch {

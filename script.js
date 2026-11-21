@@ -90,7 +90,7 @@ async function handleCalculation() {
     try {
         if (playlistId) {
             embedPlayer(playlistId, 'playlist');
-            await fetchFromBackend(playlistId);
+            await fetchFromBackend(playlistId, parsedUrl.index);
         } else {
             embedPlayer(videoId, 'video');
             await fetchSingleVideoFromBackend(videoId); 
@@ -166,7 +166,10 @@ function parseYouTubeUrl(input) {
             videoId = null;
         }
 
-        return { playlistId, videoId };
+        const rawIndex = parsed.searchParams.get('index');
+        const parsedIndex = /^\d+$/.test(rawIndex || '') ? Number(rawIndex) : null;
+        const index = Number.isSafeInteger(parsedIndex) && parsedIndex > 0 ? parsedIndex : null;
+        return { playlistId, videoId, index };
     } catch {
         return { playlistId: null, videoId: null };
     }
@@ -193,7 +196,7 @@ function embedPlayer(id, type) {
     videoPlayer.replaceChildren(iframe);
 }
 
-async function fetchFromBackend(pid) {
+async function fetchFromBackend(pid, startIndex) {
     videoDataList = [];
 
     const res = await fetch(`${BACKEND_URL}/api/playlist/${pid}`);
@@ -203,13 +206,14 @@ async function fetchFromBackend(pid) {
         throw new Error(data.detail || "Failed to fetch playlist data.");
     }
 
-    data.videos.forEach(item => {
+    data.videos.forEach((item, index) => {
         videoDataList.push({
             id: item.id,
             title: item.title,
             thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
             duration: parseDuration(item.duration),
-            active: true 
+            position: item.position,
+            active: !startIndex || (item.position || index + 1) >= startIndex
         });
     });
 
@@ -371,7 +375,7 @@ function renderVideoList() {
 
         const title = document.createElement('span');
         title.className = 'v-title';
-        title.textContent = `${index + 1}. ${video.title}`;
+        title.textContent = `${video.position || index + 1}. ${video.title}`;
 
         const duration = document.createElement('span');
         duration.className = 'v-duration';
