@@ -32,7 +32,7 @@
 
 ## Üçüncü paket
 
-- Dal `codex/request-feedback`, güncel `main` (`ebe0cdc`) üzerinden açıldı. PR #7 ayrı inceleme sırasında bekliyor. Bu dal üçüncü paketin değişikliklerini içeriyor. Birleştirme ve yayın yetkisi PR #6 için kullanıldı. Sonraki paketler incelemeye hazır PR olarak bırakılacak.
+- Dal `codex/request-feedback`, güncel `main` (`ebe0cdc`) üzerinden açıldı. [PR #8](https://github.com/ekincimustafa/playlist-calculator/pull/8) incelemeye açık. PR #7 ayrı inceleme sırasında bekliyor. Bu dal üçüncü paketin değişikliklerini içeriyor. Birleştirme ve yayın yetkisi PR #6 için kullanıldı. Sonraki paketler incelemeye hazır PR olarak bırakılacak.
 - Web ve eklenti aynı istek kodunu `extension/calculation-request.js` üzerinden yüklüyor. Paketlenmiş eklenti bu dosyayı kendi dizininden kullanıyor.
 - Backend’in 120 saniyelik bekleme sınırına bağlantı payı bırakmak için istemci isteği ve JSON okumasına toplam 150 saniyelik sınır seçildi. `AbortController` ile kullanıcı iptali ve sayfadan ayrılma destekleniyor. İstemcide iptal, sunucuda başlamış işi durdurma garantisi vermiyor.
 - İşlem sürerken durum metni ve Cancel düğmesi gösteriliyor. Hatalar ekran okuyucuların okuyabildiği bir durum alanında, düz metin olarak gösteriliyor. Kullanıcı hesaplama düğmesiyle yeniden deneyebiliyor.
