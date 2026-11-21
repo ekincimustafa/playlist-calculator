@@ -122,7 +122,11 @@ def load_playlist_data(playlist_id):
     videos = []
     playlist_offset = 0
     next_page_token = None
+    seen_page_tokens = set()
     while True:
+        if next_page_token in seen_page_tokens:
+            raise HTTPException(status_code=502, detail=INVALID_UPSTREAM_RESPONSE)
+        seen_page_tokens.add(next_page_token)
         params = {
             "part": "snippet,contentDetails",
             "maxResults": 50,

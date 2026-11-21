@@ -50,3 +50,23 @@
 - Starlette TestClient uyarısının kaynağı olan `httpx` test bağımlılığı `httpx2` olarak güncellendi. Temiz sanal ortamda kurulum ve `pip check` başarılı. 19 frontend ve 42 backend testi geçti. Backend testleri kullanımdan kaldırma uyarılarını hata sayarak da başarılı oldu. Gerçek YouTube kotası kullanılmadı.
 - Çalıştırma koşulları backend README dosyasına eklendi. Önceki paketlerin durumları ve geliştirme talimatları kayıtlarda korundu.
 - Sıradaki iş güvenlik incelemesi ve doğrulanan bulguların düzeltmeleri. Yeni özellikler bu aşamadan sonra proje sahibiyle önceliklendirilecek.
+
+
+## Beşinci paket ve güvenlik incelemesi
+
+- Dal `codex/security-pagination`, güncel main (`ebe0cdc`) üzerinden açıldı. [PR #10](https://github.com/ekincimustafa/playlist-calculator/pull/10) incelemeye açık. PR #7, #8 ve #9 ayrı incelemede bekliyor. Test sayıları main tabanındaki bu dala ait.
+- Backend’de sayfalama döngüsü doğrulandı. YouTube aynı `nextPageToken` değerini yeniden döndürdüğünde mevcut döngü yeni istekler üretmeye devam ediyordu. Token kovası zamanla dolduğu için bu kontrol tek başına bir hesaplamanın sona ermesini garanti etmiyordu. Tekrarlanan belirteç artık yeni upstream isteği öncesinde HTTP 502 üretiyor. Geçerli büyük listelerin sayfa sayısına yeni bir sınır eklenmedi.
+- İki regresyon testi doğrudan tekrar ve birden fazla belirteçten oluşan döngüyü, istek sayısını, kısmi sonucun önbelleğe alınmamasını, kapasitenin serbest kalmasını ve sonraki başarılı hesaplamanın önbelleğe alınmasını doğruluyor. Döngü testi eski kodda başarısız oldu.
+- 19 frontend ve 44 backend testi geçti. Backend testleri temiz bakım ortamında kullanımdan kaldırma uyarılarını hata sayarak çalıştırıldı. Gerçek YouTube kotası kullanılmadı.
+
+| İncelenen alan | Sonuç |
+| --- | --- |
+| İstemci girdileri ve HTML üretimi | YouTube alan adları ve kimlikler doğrulanıyor. Harici video ve geçmiş metinleri DOM metin özellikleriyle yazılıyor. Mevcut enjeksiyon regresyonları geçti. |
+| Backend erişimi ve sırlar | Upstream adres sabit, parametreler ayrı kodlanıyor, yönlendirmeler kapalı. Bağlantı hataları anahtar içeren URL’leri dışarı aktarmıyor. CORS listesi web ve yayınlanmış eklentiyle sınırlı. İlgili testler geçti. |
+| Kaynak ve önbellek sınırları | Eşzamanlı iş/bekleyen istek sınırları, token kovası, TTL ve bayt sınırları mevcut. Sayfalama döngüsü bu pakette giderildi. Sınırlar süreç başına uygulanıyor. |
+| Eklenti ve açık PR’lar | Manifest yalnızca activeTab/storage izinlerini istiyor. PR #7’nin konum verisi, PR #8’in ortak istek kodu ve PR #9’un salt okunur CI izinleri koddan incelendi. |
+| İzlenen dosyalarda sır taraması | Google anahtarı, GitHub token’ı ve özel anahtar kalıplarıyla yapılan taramada eşleşme bulunmadı. Bu tarama git geçmişini kapsamıyor. |
+| Bağımlılıklar | `pip-audit`, mevcut requirements dosyasından çözümlenen 21 bağımlılıkta bilinen açık bildirmedi. Bu sonuç Render’da kurulu sürümleri doğrulamıyor. |
+| Harici hesap ayarları | Render ortam değişkenleri, Google Cloud anahtar kısıtları ve günlük kota ayarları hesap erişimiyle doğrulanmadı. Bu inceleme depo kodunu ve testlerini kapsıyor. |
+
+- Depo güvenlik incelemesi ve doğrulanan kod bulgusunun düzeltmesi tamamlandı. Sıradaki adım yeni özelliklerin önceliklerini proje sahibiyle belirlemek. Açık PR’ların birleştirme ve yayın işlemleri açık yetkiyle yürütülecek.
