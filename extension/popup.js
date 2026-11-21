@@ -13,6 +13,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const listToggle = document.getElementById('listToggle');
     const listContainer = document.getElementById('videoListContainer');
 
+    let activeCalculation = null;
+    const cancelCalculationBtn = document.getElementById('cancelCalculationBtn');
+    const calculationStatus = document.getElementById('calculationStatus');
+    cancelCalculationBtn.addEventListener('click', () => {
+        activeCalculation?.abort(new DOMException('Calculation cancelled. You can try again.', 'AbortError'));
+    });
+    window.addEventListener('pagehide', () => activeCalculation?.abort(new DOMException('Page closed.', 'AbortError')));
+
     let currentUrl = "";
     let currentPId = null;
     let currentVId = null;
@@ -77,62 +85,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     calcBtn.addEventListener('click', async () => {
-        if (!currentPId && !currentVId) return;
+        if (calcBtn.disabled || (!currentPId && !currentVId)) return;
         if (currentPId && currentPId.startsWith("RD")) {
             if (currentVId) currentPId = null; 
-            else { alert("YouTube Mix playlists cannot be calculated."); return; }
+            else {
+                calculationStatus.textContent = "YouTube Mix playlists cannot be calculated.";
+                calculationStatus.classList.add('error');
+                return;
+            }
         }
 
+        activeCalculation = new AbortController();
+        cancelCalculationBtn.hidden = false;
+        calculationStatus.classList.remove('error');
+        calculationStatus.textContent = 'Calculating… Large playlists may take a moment.';
         calcBtn.disabled = true;
         calcBtn.innerText = "Processing... ⏳";
-        resultCard.style.display = "none";
-        manageVideosCard.style.display = "none";
-        listContainer.style.maxHeight = null;
-        listToggle.classList.remove('active');
 
         try {
-            let data;
-            videoDataList = [];
-
-            if (currentPId) {
-                const res = await fetch(`${BACKEND_URL}/api/playlist/${currentPId}`);
-                if (!res.ok) throw new Error("Backend connection failed.");
-                data = await res.json();
-            } else {
-                const res = await fetch(`${BACKEND_URL}/api/video/${currentVId}`);
-                if (!res.ok) throw new Error("Video not found.");
-                data = await res.json();
-            }
+            const resource = currentPId ? 'playlist' : 'video';
+            const id = currentPId || currentVId;
+            const data = await fetchCalculationData(`${BACKEND_URL}/api/${resource}/${id}`, activeCalculation);
 
             const currentIndex = extractIndex(currentUrl);
 
-            data.videos.forEach((item, index) => {
+            videoDataList = data.videos.map((item, index) => {
                 let isVideoActive = true;
                 if (currentIndex && (index + 1) < currentIndex) {
                     isVideoActive = false; 
                 }
 
-                videoDataList.push({
+                return {
                     id: item.id,
                     title: item.title,
                     thumb: item.thumbnail || 'https://i.ytimg.com/img/no_thumbnail.jpg',
                     duration: parseDuration(item.duration),
-                    active: isVideoActive 
-                });
+                    active: isVideoActive
+                };
             });
 
             recalculateTotal();
             renderVideoList();
             saveExtensionState(currentPId, currentVId); 
 
+            listContainer.style.maxHeight = null;
+            listToggle.classList.remove('active');
             resultCard.style.display = "block";
+            manageVideosCard.style.display = "none";
             if (videoDataList.length > 1) {
                 manageVideosCard.style.display = "block";
             }
 
         } catch (error) {
-            alert("Error: " + error.message);
+            calculationStatus.textContent = error.message;
+            if (error.name !== 'AbortError') calculationStatus.classList.add('error');
         } finally {
+            if (!calculationStatus.classList.contains('error') && !activeCalculation.signal.aborted) {
+                calculationStatus.textContent = '';
+            }
+            activeCalculation = null;
+            cancelCalculationBtn.hidden = true;
             calcBtn.disabled = false;
             calcBtn.innerText = "Calculate Duration";
         }

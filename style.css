@@ -391,3 +391,17 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
     max-width: 250px;
     opacity: 1;
 }
+.cancel-calculation {
+    margin-top: 10px;
+    padding: 8px 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.cancel-calculation[hidden] { display: none; }
+.cancel-calculation:hover { background-color: #eee; transform: none; }
+.calculation-status { margin: 10px 0 0; font-size: 14px; }
+.calculation-status:empty { display: none; }
+.calculation-status.error { color: #b42318; }

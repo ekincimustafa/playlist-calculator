@@ -74,6 +74,9 @@ class Element {
 function app(kind, options = {}) {
     const elements = new Map();
     const ready = [];
+    const windowListeners = new Map();
+    const timers = new Map();
+    let timerId = 0;
     const storage = new Map();
     const calls = [];
     const savedExtensionStates = [];
@@ -92,7 +95,10 @@ function app(kind, options = {}) {
     };
     Object.assign(get('speedRange'), { type: 'range', min: '1', max: '5', value: '1' });
     const context = vm.createContext({
-        Date: options.Date || Date, URL,
+        Date: options.Date || Date, URL, AbortController, DOMException,
+        setTimeout: (callback, delay) => { timers.set(++timerId, { callback, delay }); return timerId; },
+        clearTimeout: id => timers.delete(id),
+        window: { addEventListener: (name, callback) => windowListeners.set(name, callback) },
         console: { error: options.onError || (error => { throw error; }) },
         alert: value => alerts.push(value),
         document: {
@@ -114,16 +120,18 @@ function app(kind, options = {}) {
                 set: state => savedExtensionStates.push(state)
             } }
         },
-        fetch: async url => {
+        fetch: async (url, init) => {
             calls.push(url);
-            if (options.fetch) return options.fetch(url);
+            if (options.fetch) return options.fetch(url, init);
             return { ok: true, json: async () => ({ total_videos: videos.length, videos }) };
         }
     });
+    vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'extension/calculation-request.js'), 'utf8'), context);
     const file = kind === 'web' ? 'script.js' : 'extension/popup.js';
     vm.runInContext(fs.readFileSync(path.join(sourceRoot, file), 'utf8'), context, { filename: file });
     return {
-        get, storage, calls, alerts, savedExtensionStates,
+        get, storage, calls, alerts, savedExtensionStates, timers,
+        leave: () => windowListeners.get('pagehide')(),
         run: code => vm.runInContext(code, context),
         ready: async () => { for (const callback of ready) await callback(); }
     };
@@ -137,7 +145,7 @@ test('crafted playlist input is rejected before a request or embed', async () =>
     await a.get('calcBtn').click();
     assert.equal(a.get('videoPlayer').children.length, 0);
     assert.equal(a.calls.length, 0);
-    assert.deepEqual(a.alerts, ['Please enter a valid YouTube link!']);
+    assert.equal(a.get('calculationStatus').textContent, 'Please enter a valid YouTube link!');
 });
 
 test('direct embed rendering still treats crafted IDs as one property', () => {
@@ -288,8 +296,9 @@ test('web: a failed calculation releases the button for a retry', async () => {
     const calcBtn = a.get('calcBtn');
     await calcBtn.click();
 
-    assert.deepEqual(errors, ['Backend unavailable']);
-    assert.deepEqual(a.alerts, ['Error: Backend unavailable']);
+    assert.deepEqual(errors, []);
+    assert.deepEqual(a.alerts, []);
+    assert.equal(a.get('calculationStatus').textContent, 'Backend unavailable');
     assert.equal(calcBtn.disabled, false);
     assert.equal(calcBtn.innerText, 'Calculate Duration');
 
@@ -449,3 +458,130 @@ test('extension playlist index also applies when restoring saved results', async
     assert.equal(a.get('totalTimeDisplay').innerText, '5m 0s');
     assert.deepEqual(Array.from(a.run('videoDataList.map(v => v.active)')), [false, false, true]);
 });
+
+for (const kind of ['web', 'extension']) {
+    test(`${kind}: cancelling preserves results and a late response cannot replace a retry`, async () => {
+        let requestCount = 0;
+        let resolveLate;
+        let pendingSignal;
+        const response = seconds => ({ ok: true, json: async () => ({ videos: [
+            { id: 'abcdefghijk', title: 'Video', duration: `PT${seconds}S` }
+        ] }) });
+        const a = app(kind, { fetch: async (url, { signal }) => {
+            requestCount++;
+            if (requestCount === 2) {
+                pendingSignal = signal;
+                return new Promise(resolve => { resolveLate = resolve; });
+            }
+            return response(requestCount === 1 ? 600 : 42);
+        } });
+        await a.ready();
+        if (kind === 'web') a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+        const button = a.get('calcBtn');
+        await button.click();
+        const pending = button.click();
+        assert.equal(button.disabled, true);
+        assert.equal(a.get('cancelCalculationBtn').hidden, false);
+        assert.match(a.get('calculationStatus').textContent, /Calculating/);
+        assert.equal(a.run('totalSecondsGlobal'), 600);
+        await a.get('cancelCalculationBtn').click();
+        await pending;
+        assert.equal(pendingSignal.aborted, true);
+        assert.equal(button.disabled, false);
+        assert.equal(a.get('cancelCalculationBtn').hidden, true);
+        assert.match(a.get('calculationStatus').textContent, /cancelled/);
+        assert.equal(a.run('totalSecondsGlobal'), 600);
+        assert.equal(a.timers.size, 0);
+        await button.click();
+        assert.equal(a.run('totalSecondsGlobal'), 42);
+        resolveLate(response(999));
+        await new Promise(setImmediate);
+        assert.equal(a.run('totalSecondsGlobal'), 42);
+        assert.equal(a.get('calculationStatus').textContent, '');
+        if (kind === 'web') {
+            assert.equal(JSON.parse(a.storage.get('ytPlaylistHistory'))[0].duration, '0h 0m 42s');
+        } else {
+            assert.equal(a.savedExtensionStates.at(-1).savedData[0].duration, 42);
+        }
+        assert.equal(a.alerts.length, 0);
+    });
+
+    test(`${kind}: the deadline includes response reading and allows a retry after timeout`, async () => {
+        let resolveBody;
+        let pendingSignal;
+        let retry = false;
+        const a = app(kind, { fetch: async (url, { signal }) => {
+            pendingSignal = signal;
+            return { ok: true, json: () => retry
+                ? Promise.resolve({ videos: [] })
+                : new Promise(resolve => { resolveBody = resolve; }) };
+        } });
+        await a.ready();
+        if (kind === 'web') a.get('playlistUrl').value = 'https://www.youtube.com/watch?v=abcdefghijk';
+        const pending = a.get('calcBtn').click();
+        await new Promise(setImmediate);
+        assert.equal(a.timers.size, 1);
+        const timer = Array.from(a.timers.values())[0];
+        assert.equal(timer.delay, 150000);
+        timer.callback();
+        await pending;
+        assert.equal(pendingSignal.aborted, true);
+        assert.equal(a.get('calcBtn').disabled, false);
+        assert.match(a.get('calculationStatus').textContent, /timed out/);
+        assert.equal(a.timers.size, 0);
+        retry = true;
+        await a.get('calcBtn').click();
+        resolveBody({ videos: [{ id: 'abcdefghijk', title: 'Late', duration: 'PT999S' }] });
+        await new Promise(setImmediate);
+        assert.equal(a.run('totalSecondsGlobal'), 0);
+        assert.equal(a.get('calculationStatus').textContent, '');
+        assert.equal(a.timers.size, 0);
+    });
+
+    test(`${kind}: network, HTTP and invalid responses preserve earlier results and show safe errors`, async () => {
+        const failures = [
+            [async () => { throw new Error('network failure'); }, /Check your connection/],
+            [async () => ({ ok: false, json: async () => ({ detail: '<img src=x onerror=alert(1)>' }) }), /<img/],
+            [async () => ({ ok: false, json: async () => ({}) }), /could not complete/],
+            [async () => ({ ok: false, json: async () => { throw new Error('HTML response'); } }), /unreadable/],
+            [async () => ({ ok: true, json: async () => ({ videos: [{}] }) }), /incomplete video/]
+        ];
+        let fail;
+        const a = app(kind, { fetch: async () => fail ? fail() : ({ ok: true, json: async () => ({ videos: [
+            { id: 'abcdefghijk', title: 'Original', duration: 'PT10M' }
+        ] }) }) });
+        await a.ready();
+        if (kind === 'web') a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+        await a.get('calcBtn').click();
+        for (const [load, message] of failures) {
+            fail = load;
+            await a.get('calcBtn').click();
+            assert.match(a.get('calculationStatus').textContent, message);
+            assert.equal(a.get('calculationStatus').children.length, 0);
+            assert.equal(a.get('calculationStatus').classList.contains('error'), true);
+            assert.equal(a.get('calcBtn').disabled, false);
+            assert.equal(a.get('cancelCalculationBtn').hidden, true);
+            assert.equal(a.run('totalSecondsGlobal'), 600);
+            assert.equal(a.get('videoList').children.length, 1);
+            assert.equal(a.timers.size, 0);
+        }
+        assert.equal(a.alerts.length, 0);
+    });
+
+    test(`${kind}: leaving the page aborts a pending request`, async () => {
+        let signal;
+        const a = app(kind, { fetch: (url, options) => {
+            signal = options.signal;
+            return new Promise(() => {});
+        } });
+        await a.ready();
+        if (kind === 'web') a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+        const pending = a.get('calcBtn').click();
+        a.leave();
+        await pending;
+        assert.equal(signal.aborted, true);
+        assert.equal(a.timers.size, 0);
+        assert.equal(a.storage.size, 0);
+        assert.equal(a.savedExtensionStates.length, 0);
+    });
+}
