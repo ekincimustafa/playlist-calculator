@@ -150,6 +150,41 @@ class BackendTests(unittest.TestCase):
             self.assertEqual(call.kwargs["timeout"], (5, 15))
             self.assertFalse(call.kwargs["allow_redirects"])
 
+    def test_repeated_page_tokens_stop_before_another_upstream_request(self):
+        for tokens in [("same", "same"), ("first", "second", "first")]:
+            with self.subTest(tokens=tokens):
+                responses = []
+                for token in tokens:
+                    responses.extend([
+                        playlist_page(VIDEO_ID, next_page_token=token),
+                        youtube_response({"items": [video_item()]}),
+                    ])
+                self.get.reset_mock()
+                self.get.side_effect = responses
+                response = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+                self.assertEqual(response.status_code, 502)
+                self.assertEqual(response.json(), {"detail": main.INVALID_UPSTREAM_RESPONSE})
+                self.assertEqual(self.get.call_count, len(tokens) * 2)
+
+    def test_pagination_failure_releases_capacity_and_does_not_cache_partial_results(self):
+        guard = main.ResourceGuard(max_active=1)
+        with patch.object(main, "resource_guard", guard):
+            self.get.side_effect = [
+                playlist_page(VIDEO_ID, next_page_token="same"),
+                youtube_response({"items": [video_item()]}),
+                playlist_page(VIDEO_ID, next_page_token="same"),
+                youtube_response({"items": [video_item()]}),
+            ]
+            self.assertEqual(self.client.get(f"/api/playlist/{PLAYLIST_ID}").status_code, 502)
+            self.get.side_effect = [playlist_page(VIDEO_ID), youtube_response({"items": [video_item()]})]
+            recovered = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+            self.assertEqual(recovered.status_code, 200)
+            self.assertEqual(recovered.json()["total_videos"], 1)
+            self.assertEqual(recovered.headers["x-playlist-cache"], "MISS")
+            cached = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+            self.assertEqual(cached.headers["x-playlist-cache"], "HIT")
+            self.assertEqual(self.get.call_count, 6)
+
     def test_unavailable_playlist_items_and_duplicate_videos_keep_existing_behavior(self):
         self.get.side_effect = [
             playlist_page(VIDEO_ID, OTHER_VIDEO_ID, next_page_token="second"),
@@ -161,6 +196,49 @@ class BackendTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual([video["id"] for video in response.json()["videos"]], [VIDEO_ID, VIDEO_ID])
         self.assertEqual(response.json()["total_videos"], 2)
+        self.assertEqual([v["position"] for v in response.json()["videos"]], [1, 3])
+
+    def test_playlist_order_duplicates_and_positions_survive_reordered_details_and_missing_items(self):
+        page = {"items": [
+            {"contentDetails": {"videoId": video_id}, "snippet": {"position": position}}
+            for video_id, position in [(VIDEO_ID, 0), ("missing1234", 1), (OTHER_VIDEO_ID, 2), (VIDEO_ID, 3)]
+        ], "nextPageToken": "second"}
+        self.get.side_effect = [
+            youtube_response(page),
+            youtube_response({"items": [video_item(OTHER_VIDEO_ID, duration="PT5M"), video_item()]}),
+            youtube_response({"items": [
+                {"contentDetails": {"videoId": VIDEO_ID}, "snippet": {"position": 4}}
+            ]}),
+            youtube_response({"items": [video_item()]}),
+        ]
+        response = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+        self.assertEqual(response.status_code, 200)
+        videos = response.json()["videos"]
+        self.assertEqual([v["id"] for v in videos], [VIDEO_ID, OTHER_VIDEO_ID, VIDEO_ID, VIDEO_ID])
+        self.assertEqual([v["position"] for v in videos], [1, 3, 4, 5])
+        self.assertEqual([v["duration"] for v in videos], ["PT10M", "PT5M", "PT10M", "PT10M"])
+        self.assertEqual(response.json()["total_videos"], 4)
+        self.assertEqual(self.get.call_count, 4)
+
+    def test_all_unavailable_page_keeps_later_positions(self):
+        self.get.side_effect = [
+            playlist_page(VIDEO_ID, OTHER_VIDEO_ID, next_page_token="second"),
+            youtube_response({"items": []}),
+            playlist_page(VIDEO_ID),
+            youtube_response({"items": [video_item()]}),
+        ]
+        response = self.client.get(f"/api/playlist/{PLAYLIST_ID}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["videos"][0]["position"], 3)
+
+    def test_invalid_playlist_positions_return_controlled_errors(self):
+        for snippet in [None, {"position": -1}, {"position": True}, {"position": "2"}]:
+            with self.subTest(snippet=snippet):
+                self.get.side_effect = [
+                    youtube_response({"items": [{"contentDetails": {"videoId": VIDEO_ID}, "snippet": snippet}]}),
+                    youtube_response({"items": [video_item()]}),
+                ]
+                self.assertEqual(self.client.get(f"/api/playlist/{PLAYLIST_ID}").status_code, 502)
 
     def test_missing_medium_thumbnail_and_video_not_found_keep_existing_fallbacks(self):
         item = video_item()

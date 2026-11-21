@@ -120,8 +120,13 @@ def get_playlist_data(playlist_id: str, response: Response):
 
 def load_playlist_data(playlist_id):
     videos = []
+    playlist_offset = 0
     next_page_token = None
+    seen_page_tokens = set()
     while True:
+        if next_page_token in seen_page_tokens:
+            raise HTTPException(status_code=502, detail=INVALID_UPSTREAM_RESPONSE)
+        seen_page_tokens.add(next_page_token)
         params = {
             "part": "snippet,contentDetails",
             "maxResults": 50,
@@ -147,8 +152,21 @@ def load_playlist_data(playlist_id):
             "id": ','.join(video_ids),
         })
 
-        for item in vid_response.get("items", []):
-            videos.append(video_details(item))
+        details_by_id = {}
+        for item in vid_response["items"]:
+            details = video_details(item)
+            details_by_id[details["id"]] = details
+        for offset, item in enumerate(pl_response["items"]):
+            snippet = item.get("snippet", {})
+            if not isinstance(snippet, dict):
+                raise HTTPException(status_code=502, detail=INVALID_UPSTREAM_RESPONSE)
+            position = snippet.get("position", playlist_offset + offset)
+            if type(position) is not int or position < 0:
+                raise HTTPException(status_code=502, detail=INVALID_UPSTREAM_RESPONSE)
+            details = details_by_id.get(item["contentDetails"]["videoId"])
+            if details is not None:
+                videos.append({**details, "position": position + 1})
+        playlist_offset += len(pl_response["items"])
 
         next_page_token = pl_response.get("nextPageToken")
         if not next_page_token:
