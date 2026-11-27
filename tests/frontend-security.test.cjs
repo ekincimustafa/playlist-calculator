@@ -132,6 +132,7 @@ function app(kind, options = {}) {
     return {
         get, storage, calls, alerts, savedExtensionStates, timers,
         leave: () => windowListeners.get('pagehide')(),
+        changeLanguage: () => windowListeners.get('playlist-language-change')(),
         run: code => vm.runInContext(code, context),
         ready: async () => { for (const callback of ready) await callback(); }
     };
@@ -674,3 +675,55 @@ for (const kind of ['web', 'extension']) {
         assert.equal(a.savedExtensionStates.length, 0);
     });
 }
+
+
+test('website language refresh preserves totals, selections, history and request count', async () => {
+    const a = app('web');
+    await a.ready();
+    a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+    await a.get('calcBtn').click();
+    await a.get('videoList').children[0].click({ target: { type: 'checkbox', checked: false } });
+    const history = a.storage.get('ytPlaylistHistory');
+    const calls = a.calls.length;
+    a.run("window.PlaylistI18n = { t: (key, values = {}) => key === 'shortAverage' ? values.minutes + ' dk ' + values.seconds + ' sn' : key === 'calculate' ? 'Süreyi Hesapla' : key, message: text => text, language: 'tr' }");
+    a.changeLanguage();
+    assert.equal(a.get('minutes').innerText, '5');
+    assert.equal(a.get('avgVideo').innerText, '5 dk 0 sn');
+    assert.deepEqual(a.get('videoList').children.map(row => row.children[0].checked), [false, true]);
+    assert.equal(a.get('calcBtn').innerText, 'Süreyi Hesapla');
+    assert.equal(a.storage.get('ytPlaylistHistory'), history);
+    assert.equal(a.calls.length, calls);
+});
+
+test('changing language during a request preserves the processing lock and cancellation', async () => {
+    const a = app('web', { fetch: () => new Promise(() => {}) });
+    await a.ready();
+    a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+    const pending = a.get('calcBtn').click();
+    a.run("window.PlaylistI18n = { t: key => key === 'processing' ? 'Hesaplanıyor...' : 'Süreyi Hesapla', message: text => text ? 'Çevrildi: ' + text : '', language: 'tr' }");
+    a.changeLanguage();
+    assert.equal(a.get('calcBtn').disabled, true);
+    assert.equal(a.get('calcBtn').innerText, 'Hesaplanıyor...');
+    assert.equal(a.get('cancelCalculationBtn').hidden, false);
+    assert.match(a.get('calculationStatus').textContent, /^Çevrildi:/);
+    await a.get('cancelCalculationBtn').click();
+    await pending;
+    assert.equal(a.get('calcBtn').disabled, false);
+    assert.equal(a.get('calcBtn').innerText, 'Süreyi Hesapla');
+    assert.match(a.get('calculationStatus').textContent, /cancelled/);
+    assert.equal(a.calls.length, 1);
+});
+
+test('corrupt or blocked history storage cannot break language changes or successful calculations', async () => {
+    const a = app('web');
+    await a.ready();
+    a.storage.set('ytPlaylistHistory', '{broken');
+    a.changeLanguage();
+    assert.equal(a.get('historyList').children[0].textContent, 'No recent history.');
+    a.run("localStorage.getItem = () => { throw Error('Blocked'); }; localStorage.setItem = () => { throw Error('Blocked'); };");
+    a.changeLanguage();
+    a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+    await a.get('calcBtn').click();
+    assert.equal(a.get('minutes').innerText, '15');
+    assert.equal(a.get('calculationStatus').textContent, '');
+});

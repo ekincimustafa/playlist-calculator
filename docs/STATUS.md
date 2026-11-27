@@ -1,5 +1,16 @@
 # Proje durumu
 
+## Web sitesinde sekiz dil desteği — 27 Kasım 2026
+
+- Kullanıcı yeni geliştirmeyi tamamlama ve testlerden sonra yayınlama yetkisi verdi; önceliği ziyaretçi dağılımına uygun çoklu dil desteği olarak belirledi. Dal: `codex/website-languages`; taban main: `4ff3a869adaafec2343e96d819784cc314839fd4`.
+- Dil seti: İngilizce (`en`), Türkçe (`tr`), Hintçe (`hi`), Urduca (`ur`), İspanyolca (`es`), Geleneksel Çince (`zh-Hant`), Portekizce (`pt`) ve Arapça (`ar`). Ülke verisi dil tercihini kesin göstermez; IP/ülke yönlendirmesi yapılmıyor. Otomatik seçim tarayıcının sıralı dil tercihlerine dayanıyor; desteklenmeyen diller İngilizceye dönüyor. Hong Kong/Tayvan/Makao ve açık Hant tercihi Geleneksel Çinceyi seçiyor; Hans tercihi farklı yazıya zorlanmıyor.
+- Üstteki menüyle açık dil seçimi `ytPlaylistLanguage` yerel kaydında hatırlanıyor; Otomatik seçeneği bu kaydı kaldırıyor. Depolama engelliyse mevcut sekmede seçim kullanılabiliyor. Urduca/Arapça için RTL, diğer diller için LTR uygulanıyor. Bağlantı alanı ve hız kaydırıcısı LTR kalıyor.
+- Statik metinler, düğmeler, erişilebilir etiketler, toplam/ortalama birimleri, bitiş saati, geçmiş gösterimi, gizlilik metni, doğrulama/bekleme/iptal/zaman aşımı mesajları çevriliyor. YouTube başlıkları değiştirilmeden düz metin olarak gösteriliyor. Dil değişimi yeni API isteği oluşturmuyor; seçimler ve kayıtlı hesaplamalar korunuyor. Bozuk/engelli geçmiş kaydı da sonuçları engellemiyor.
+- `node --test tests/*.test.cjs`: **50/50 başarılı**. Yeni kontroller dil pazarlığını, tercih önceliğini, otomatiğe dönüşü, depolama hatalarını, çeviri anahtarı/değişken bütünlüğünü, RTL geçişini, aktif işlem kilidini, iptali ve sonuç/geçmiş korunmasını kapsıyor. Gerçek YouTube kotası kullanılmadı. Backend ve paketlenmiş Chrome eklentisi bu pakette değişmedi; backend kontrolleri mevcut GitHub Actions işinde çalıştırılacak.
+- Yerel tarayıcı denemesi ortam erişimi nedeniyle açılamadı; bu aşamada gerçek mobil/masaüstü görsel testinin geçtiği iddia edilmiyor. Yayında dosya/Pages doğrulaması yapılacak; erişim uygunsa canlı dil menüsü ayrıca kontrol edilecek.
+- Bu sürüm istemci tarafında dil desteği sunar; her dil için ayrı indekslenebilir URL/HTML, hreflang ve çok dilli sitemap henüz eklenmedi. SEO aşamasında ayrı çalışma olarak ele alınacak. Çeviriler için ana dili konuşanlardan geri bildirim alınması yararlı olacaktır.
+- Önceki yayın kayıtlarının güncel durumu: PR #7–#13 birleştirildi. Kullanıcının Render ekranında backend `f39ca8b` ile Live olarak doğrulandı; Chrome Web Store ekranında 1.1.0 sürümü herkese açık yayımlanmış olarak görüldü. Aşağıdaki eski bölümler ilgili tarihlerdeki hazırlık/erişim durumlarının tarihçesidir.
+
 ## Chrome eklentisi 1.1.0 paket hazırlığı — 21 Kasım 2026
 
 - `main` üzerindeki `d58612f` taban alındı. Manifest sürümü `1.0` değerinden `1.1.0` değerine yükseltildi; ürün JavaScript kodu, Manifest V3 ve izinler değiştirilmedi.
