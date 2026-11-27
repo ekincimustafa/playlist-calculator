@@ -1,3 +1,5 @@
+> **27 Kasım 2026: Geliştirmeler kullanıcı talebiyle durduruldu.** Son çoklu dil güncellemeleri (#14–#16) geri alındı. Kullanıcı yeniden başlatmadan bu listedeki işlere devam edilmeyecek. Aşağıdaki liste tarihsel planı gösterir.
+
 # Yol haritası
 
 1. **Hesaplama doğruluğu ve web/eklenti tutarlılığı — tamamlandı.** Üst üste istek, özgün playlist konumları ve index davranışı PR #6/#7/#11 ile düzeltildi.

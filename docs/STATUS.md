@@ -151,3 +151,12 @@
 ### Kullanıcıdan gereken işlem
 
 Render eklentisini bağlamak, servis ayarları ve dağıtım geçmişini bu sohbetten doğrulamamı sağlar. Manuel ilerlemek tercih edilirse önce Render’daki playlist backend servisinin Settings/Deploys ekranlarından kaynak dalı, otomatik yayın durumu, root/build/start/health ayarları ve mevcut canlı commit paylaşılmalı. Gizli anahtarlar paylaşılmamalı. Bu bilgilerle Pages ayarı doğrulandıktan sonra backend entegrasyon dalından yayınlanıp Render’daki commit/live kaydı kontrol edilecek. Mevcut aşamada birleştirme veya yayın yapılmadı.
+
+
+## Geliştirmeler durduruldu; son web güncellemeleri geri alındı — 27 Kasım 2026
+
+- Kullanıcı, sitede hatalar bildirdi ve tüm geliştirmelerin durdurulmasını, son güncellemelerin geri alınmasını açıkça istedi. Yeni geliştirmeler kullanıcı tekrar başlatana kadar durduruldu.
+- PR #16, #15 ve #14 ters sırayla geri alındı. Web kaynakları ve ilgili testler çoklu dil öncesindeki `4ff3a869adaafec2343e96d819784cc314839fd4` sürümüyle birebir aynı. Çoklu dil kodu, dil menüsü ve bu yayına ait asset parametreleri kaldırıldı.
+- Önceki backend, eklenti ve hesaplama düzeltmeleri korundu. Git geçmişi silinmedi; geri alma ayrı commit ve PR ile izleniyor.
+- Doğrulama: 38 frontend ve 48 backend testi başarılı; gerçek YouTube kotası kullanılmadı. Backend testleri mevcut `review-deps` bağımlılıklarıyla çalıştırıldı; ortamın mevcut Starlette/httpx deprecation uyarısı sürüyor.
+- Yayın tamamlanması, geri alma PR'ının birleştirme commit'ine ait GitHub Pages build/deploy sonucuyla doğrulanacak.

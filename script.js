@@ -26,16 +26,6 @@ const videoCountEl = document.getElementById('videoCount');
 const finishTimeEl = document.getElementById('finishTime');
 const videoListSection = document.getElementById('videoListSection');
 
-// The packaged extension keeps its own UI; these translations belong to the website.
-function translate(key, fallback, values = {}) {
-    return window.PlaylistI18n?.t(key, values) ?? fallback.replace(/\{(\w+)\}/g, (match, name) => Object.hasOwn(values, name) ? String(values[name]) : match);
-}
-let currentStatusMessage = '';
-function setCalculationStatus(message) {
-    currentStatusMessage = message;
-    calculationStatus.textContent = window.PlaylistI18n?.message(message) ?? message;
-}
-
 // --- GLOBAL STATE ---
 let totalSecondsGlobal = 0; 
 let activeCalculation = null;
@@ -83,7 +73,7 @@ async function handleCalculation() {
     const videoId = parsedUrl.videoId;
 
     if (!playlistId && !videoId) {
-        setCalculationStatus("Please enter a valid YouTube link!");
+        calculationStatus.textContent = "Please enter a valid YouTube link!";
         calculationStatus.classList.add('error');
         return;
     }
@@ -92,7 +82,7 @@ async function handleCalculation() {
         if (videoId) {
             playlistId = null; 
         } else {
-            setCalculationStatus("YouTube Mix playlists are auto-generated and cannot be calculated. Please enter a standard playlist or video link.");
+            calculationStatus.textContent = "YouTube Mix playlists are auto-generated and cannot be calculated. Please enter a standard playlist or video link.";
             calculationStatus.classList.add('error');
             return;
         }
@@ -101,9 +91,9 @@ async function handleCalculation() {
     activeCalculation = new AbortController();
     cancelCalculationBtn.hidden = false;
     calculationStatus.classList.remove('error');
-    setCalculationStatus('Calculating… Large playlists may take a moment.');
+    calculationStatus.textContent = 'Calculating… Large playlists may take a moment.';
     calcBtn.disabled = true;
-    calcBtn.innerText = translate("processing", "Processing...");
+    calcBtn.innerText = "Processing...";
 
     const extBtn = document.getElementById('extensionPromoBtn');
     const histBtn = document.getElementById('historyToggleBtn');
@@ -130,10 +120,10 @@ async function handleCalculation() {
 
         const totalDurationStr = `${hoursEl.innerText}h ${minutesEl.innerText}m ${secondsEl.innerText}s`;
 
-        let title = translate("video", "YouTube Video");
+        let title = "YouTube Video";
         if (videoDataList.length > 0) {
             if (videoDataList.length > 1) {
-                title = translate("playlist", "Playlist:") + " " + videoDataList[0].title.substring(0, 30) + "...";
+                title = "Playlist: " + videoDataList[0].title.substring(0, 30) + "...";
             } else {
                 title = videoDataList[0].title.substring(0, 40) + "...";
             }
@@ -142,16 +132,16 @@ async function handleCalculation() {
         saveToHistory(url, title, videoDataList.length, totalDurationStr);
 
     } catch (error) {
-        setCalculationStatus(error.message);
+        calculationStatus.textContent = error.message;
         if (error.name !== 'AbortError') calculationStatus.classList.add('error');
     } finally {
         if (!calculationStatus.classList.contains('error') && !activeCalculation.signal.aborted) {
-            setCalculationStatus('');
+            calculationStatus.textContent = '';
         }
         activeCalculation = null;
         cancelCalculationBtn.hidden = true;
         calcBtn.disabled = false;
-        calcBtn.innerText = translate("calculate", "Calculate Duration");
+        calcBtn.innerText = "Calculate Duration";
     }
 }
 
@@ -219,7 +209,7 @@ function embedPlayer(id, type) {
     const iframe = document.createElement('iframe');
     iframe.src = src;
     iframe.allowFullscreen = true;
-    iframe.title = type === 'playlist' ? translate('playlistPlayer', 'YouTube playlist player') : translate('videoPlayer', 'YouTube video player');
+    iframe.title = type === 'playlist' ? 'YouTube playlist player' : 'YouTube video player';
 
     videoPlayer.replaceChildren(iframe);
 }
@@ -271,12 +261,12 @@ function updateUI(count) {
     const avg = count > 0 ? realDuration / count : 0;
     const m = Math.floor(avg / 60);
     const s = Math.floor(avg % 60);
-    if (avgEl) avgEl.innerText = translate('shortAverage', '{minutes}m {seconds}s', { minutes: m, seconds: s });
+    if (avgEl) avgEl.innerText = `${m}m ${s}s`;
 
     if (finishTimeEl) {
         const now = new Date();
         const finishDate = new Date(now.getTime() + (realDuration * 1000));
-        const finishString = finishDate.toLocaleTimeString(window.PlaylistI18n?.language ? [window.PlaylistI18n.language] : [], {hour: '2-digit', minute:'2-digit'});
+        const finishString = finishDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         finishTimeEl.innerText = finishString;
     }
 }
@@ -373,7 +363,7 @@ function renderVideoList() {
 
         const thumbnail = document.createElement('img');
         thumbnail.src = video.thumb;
-        thumbnail.alt = translate('thumbnail', 'Video thumbnail');
+        thumbnail.alt = 'thumb';
         thumbnail.loading = 'lazy';
 
         const info = document.createElement('div');
@@ -391,7 +381,6 @@ function renderVideoList() {
         li.append(checkbox, thumbnail, info);
         listEl.appendChild(li);
     });
-    if (listContainer.style.maxHeight) listContainer.style.maxHeight = listContainer.scrollHeight + 'px';
 }
 
 function toggleVideo(index, event) {
@@ -420,7 +409,7 @@ function recalculateTotal() {
 }
 
 function formatSimpleTime(seconds) {
-    if (seconds === 0) return translate('unknown', 'Live/Unknown');
+    if (seconds === 0) return "Live/Unknown";
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
@@ -449,46 +438,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(clearHistoryBtn) {
         clearHistoryBtn.addEventListener('click', () => {
-            try { localStorage.removeItem('ytPlaylistHistory'); } catch { /* Storage may be blocked. */ }
+            localStorage.removeItem('ytPlaylistHistory');
             renderHistory();
         });
     }
 });
 
-function readHistory() {
-    try {
-        const history = JSON.parse(localStorage.getItem('ytPlaylistHistory'));
-        return Array.isArray(history) ? history.filter(item => item && typeof item === 'object') : [];
-    } catch { return []; }
-}
-
 function saveToHistory(url, title, videoCount, totalDurationStr) {
-    let history = readHistory();
+    let history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
     history = history.filter(item => item.url !== url);
 
     history.unshift({
         url: url,
-        title: title || translate("playlistDefault", "YouTube Playlist"),
+        title: title || "YouTube Playlist",
         videoCount: videoCount,
         duration: totalDurationStr,
         date: new Date().toLocaleDateString()
     });
 
     if (history.length > 10) history.pop();
-    try { localStorage.setItem('ytPlaylistHistory', JSON.stringify(history)); } catch { /* Results remain usable without storage. */ }
+    localStorage.setItem('ytPlaylistHistory', JSON.stringify(history));
 }
 
 function renderHistory() {
     const historyList = document.getElementById('historyList');
     if(!historyList) return;
 
-    const history = readHistory();
+    const history = JSON.parse(localStorage.getItem('ytPlaylistHistory')) || [];
     historyList.replaceChildren();
 
     if (history.length === 0) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'empty-history';
-        emptyItem.textContent = translate('noHistory', 'No recent history.');
+        emptyItem.textContent = 'No recent history.';
         historyList.appendChild(emptyItem);
         return;
     }
@@ -509,24 +491,9 @@ function renderHistory() {
 
         const info = document.createElement('div');
         info.className = 'history-info';
-        const savedSeconds = /^(\d+)h (\d+)m (\d+)s$/.exec(item.duration);
-        const duration = savedSeconds ? translate('shortTime', '{hours}h {minutes}m {seconds}s', { hours: savedSeconds[1], minutes: savedSeconds[2], seconds: savedSeconds[3] }) : item.duration;
-        info.textContent = `${translate('videoCount', '{count} Videos', { count: item.videoCount })} • ${duration}`;
+        info.textContent = `${item.videoCount} Videos • ${item.duration}`;
 
         li.append(title, info);
         historyList.appendChild(li);
     });
 }
-
-// Switching language changes presentation only; no request or selection is reset.
-window.addEventListener('playlist-language-change', () => {
-    calcBtn.innerText = activeCalculation ? translate('processing', 'Processing...') : translate('calculate', 'Calculate Duration');
-    setCalculationStatus(currentStatusMessage);
-    if (videoDataList.length || document.getElementById('resultSection').style.display === 'flex') {
-        updateUI(videoDataList.filter(video => video.active).length);
-        renderVideoList();
-    }
-    renderHistory();
-    const iframe = videoPlayer.children[0];
-    if (iframe) iframe.title = iframe.src.includes('/videoseries?') ? translate('playlistPlayer', 'YouTube playlist player') : translate('videoPlayer', 'YouTube video player');
-});
