@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css?v=20261127-languages">
+    <link rel="stylesheet" href="style.css?v=20261127-globe">
 
     <meta name="description" data-i18n-content="metaDescription" content="Calculate the total duration of any YouTube playlist instantly. See how long it takes to watch at 1.25x, 1.5x, 2x speeds. Free tool for students.">
     <meta name="keywords" content="youtube playlist length calculator, youtube duration, playlist time, study tool, playlist timer, youtube süre hesaplayıcı">
@@ -38,28 +38,13 @@
     <link rel="icon" href="favicon.png" sizes="48x48" type="image/png">
     
     <link rel="apple-touch-icon" href="extension/128x128.png">    
-    <script src="i18n.js?v=20261127-languages" defer></script>
+    <script src="i18n.js?v=20261127-globe" defer></script>
     <script src="extension/calculation-request.js" defer></script>
-    <script src="script.js?v=20261127-languages" defer></script>
+    <script src="script.js?v=20261127-globe" defer></script>
 </head>
 <body>
 
     <main class="main-wrapper" id="mainWrapper">
-        <div class="language-control">
-            <label for="languageSelect" data-i18n="language">Language</label>
-            <select id="languageSelect">
-                <option value="auto" data-i18n="automatic">Automatic</option>
-                <option value="en" lang="en">English</option>
-                <option value="tr" lang="tr">Türkçe</option>
-                <option value="es" lang="es">Español</option>
-                <option value="pt" lang="pt">Português</option>
-                <option value="hi" lang="hi">हिन्दी</option>
-                <option value="ur" lang="ur" dir="rtl">اردو</option>
-                <option value="zh-Hant" lang="zh-Hant">繁體中文</option>
-                <option value="ar" lang="ar" dir="rtl">العربية</option>
-            </select>
-        </div>
-        
         <div class="history-wrapper">
             <button id="historyToggleBtn" class="history-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -179,6 +164,25 @@
             </div>
         </div>
     </main>
+    <div class="language-control" id="languageControl">
+        <button type="button" class="language-btn" id="languageToggle" aria-label="Language" title="Language" data-i18n-aria-label="language" data-i18n-title="language" aria-expanded="false" aria-controls="languageMenu" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M3 12h18M12 3a17 17 0 0 1 0 18 17 17 0 0 1 0-18Z"/>
+            </svg>
+        </button>
+        <div class="language-menu" id="languageMenu" role="dialog" aria-label="Language" data-i18n-aria-label="language" hidden>
+            <button type="button" class="language-choice" data-language="auto" aria-pressed="false"><span data-i18n="automatic">Automatic</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="en" aria-pressed="false"><span lang="en" dir="auto">English</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="tr" aria-pressed="false"><span lang="tr" dir="auto">Türkçe</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="es" aria-pressed="false"><span lang="es" dir="auto">Español</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="pt" aria-pressed="false"><span lang="pt" dir="auto">Português</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="hi" aria-pressed="false"><span lang="hi" dir="auto">हिन्दी</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="ur" aria-pressed="false"><span lang="ur" dir="auto">اردو</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="zh-Hant" aria-pressed="false"><span lang="zh-Hant" dir="auto">繁體中文</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button type="button" class="language-choice" data-language="ar" aria-pressed="false"><span lang="ar" dir="auto">العربية</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+        </div>
+    </div>
     <footer class="site-footer">
         <div class="footer-content">
             <p class="copyright">

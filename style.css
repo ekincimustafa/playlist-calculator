@@ -406,33 +406,84 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
 .calculation-status:empty { display: none; }
 .calculation-status.error { color: #b42318; }
 
-/* Keep the language choice in the header flow, clear of the fixed corner buttons. */
+/* Fixed language shortcut shares the corner buttons' color and motion. */
 .language-control {
+    position: fixed;
+    left: max(20px, env(safe-area-inset-left));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    z-index: 1000;
+}
+.language-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #111;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.language-btn svg { width: 21px; height: 21px; }
+.language-btn:hover, .language-btn[aria-expanded="true"] {
+    background: #ff0000;
+    box-shadow: 0 6px 20px rgba(255,0,0,0.3);
+    transform: translateY(-2px);
+}
+.language-btn:focus-visible, .language-choice:focus-visible { outline: 2px solid #d60000; outline-offset: 3px; }
+.language-menu {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 12px);
+    width: 212px;
+    max-width: calc(100vw - 40px);
+    max-height: min(440px, calc(100dvh - 110px));
+    overflow-y: auto;
+    padding: 6px;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    direction: ltr;
+    animation: languageMenuIn 0.18s ease-out;
+}
+.language-menu[hidden] { display: none; }
+.language-choice {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 12px;
     width: 100%;
-    margin-top: 54px;
-    font-size: 14px;
-    color: #495057;
-}
-.language-control select {
-    max-width: 190px;
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 10px;
-    background: #fff;
+    margin: 0;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
     color: #212529;
-    font: inherit;
+    text-align: start;
+    font: 500 14px/1.4 'Inter', sans-serif;
     cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
-.language-control select:focus-visible { outline: 2px solid #d60000; outline-offset: 3px; }
-.language-control + .history-wrapper + .input-section header { margin-top: 22px; }
-.main-wrapper.expanded .language-control { flex-basis: 100%; margin-bottom: -20px; }
+.language-choice:hover, .language-choice:focus-visible { background: #f8f9fa; transform: none; }
+.language-choice[aria-pressed="true"] { color: #d60000; background: #fff3f3; font-weight: 700; }
+.language-choice svg { width: 16px; height: 16px; flex-shrink: 0; visibility: hidden; }
+.language-choice[aria-pressed="true"] svg { visibility: visible; }
+@keyframes languageMenuIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .language-btn, .language-choice { transition: none; }
+    .language-menu { animation: none; }
+}
 @media (max-width: 900px) {
-    .language-control { flex-shrink: 0; margin-top: 50px; }
-    .main-wrapper.expanded .language-control { flex-basis: auto; margin-bottom: 0; }
+    .site-footer { padding-bottom: 78px; }
     .video-list-section { box-sizing: border-box; width: 100%; }
 }
 

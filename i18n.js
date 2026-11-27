@@ -457,8 +457,9 @@
                 element.setAttribute(attribute, t(element.getAttribute(`data-i18n-${attribute}`)));
             });
         }
-        const select = document.getElementById('languageSelect');
-        if (select) select.value = preference;
+        document.querySelectorAll('[data-language]').forEach(choice => {
+            choice.setAttribute('aria-pressed', String(choice.dataset.language === preference));
+        });
         window.dispatchEvent(new Event('playlist-language-change'));
     }
     try {
@@ -466,14 +467,55 @@
         if (supported(saved)) preference = saved;
     } catch { /* Language detection remains available when storage is blocked. */ }
     window.PlaylistI18n = Object.freeze({ t, message, get language() { return language; } });
-    document.getElementById('languageSelect')?.addEventListener('change', event => {
-        const value = event.target.value;
+    const languageToggle = document.getElementById('languageToggle');
+    const languageMenu = document.getElementById('languageMenu');
+    const languageControl = document.getElementById('languageControl');
+    const choices = [...document.querySelectorAll('[data-language]')];
+    function closeLanguageMenu(restoreFocus = false) {
+        if (!languageMenu || !languageToggle) return;
+        languageMenu.hidden = true;
+        languageToggle.setAttribute('aria-expanded', 'false');
+        if (restoreFocus) languageToggle.focus();
+    }
+    languageToggle?.addEventListener('click', () => {
+        if (!languageMenu) return;
+        if (!languageMenu.hidden) return closeLanguageMenu();
+        languageMenu.hidden = false;
+        languageToggle.setAttribute('aria-expanded', 'true');
+        choices.find(choice => choice.dataset.language === preference)?.focus();
+    });
+    choices.forEach(choice => choice.addEventListener('click', () => {
+        const value = choice.dataset.language;
         preference = supported(value) ? value : 'auto';
         try {
             if (preference === 'auto') localStorage.removeItem(storageKey);
             else localStorage.setItem(storageKey, preference);
         } catch { /* The current tab can still use the selected language. */ }
         apply();
+        closeLanguageMenu(true);
+    }));
+    document.addEventListener?.('click', event => {
+        if (!languageControl?.contains(event.target)) closeLanguageMenu();
+    }, true);
+    document.addEventListener?.('keydown', event => {
+        if (event.key === 'Escape' && languageMenu && !languageMenu.hidden) {
+            event.preventDefault();
+            closeLanguageMenu(true);
+        }
+    });
+    languageMenu?.addEventListener('keydown', event => {
+        const current = choices.indexOf(document.activeElement);
+        let next;
+        if (event.key === 'ArrowDown') next = (current + 1) % choices.length;
+        else if (event.key === 'ArrowUp') next = (current - 1 + choices.length) % choices.length;
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = choices.length - 1;
+        else return;
+        event.preventDefault();
+        choices[next]?.focus();
+    });
+    languageControl?.addEventListener('focusout', event => {
+        if (!languageControl.contains(event.relatedTarget)) closeLanguageMenu();
     });
     document.getElementById('privacyLink')?.addEventListener('click', event => {
         event.preventDefault();
