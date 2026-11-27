@@ -405,3 +405,46 @@ button:disabled { background-color: #ccc; cursor: wait; transform: none; }
 .calculation-status { margin: 10px 0 0; font-size: 14px; }
 .calculation-status:empty { display: none; }
 .calculation-status.error { color: #b42318; }
+
+/* Keep the language choice in the header flow, clear of the fixed corner buttons. */
+.language-control {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+    margin-top: 54px;
+    font-size: 14px;
+    color: #495057;
+}
+.language-control select {
+    max-width: 190px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 10px;
+    background: #fff;
+    color: #212529;
+    font: inherit;
+    cursor: pointer;
+}
+.language-control select:focus-visible { outline: 2px solid #d60000; outline-offset: 3px; }
+.language-control + .history-wrapper + .input-section header { margin-top: 22px; }
+.main-wrapper.expanded .language-control { flex-basis: 100%; margin-bottom: -20px; }
+@media (max-width: 900px) {
+    .language-control { flex-shrink: 0; margin-top: 50px; }
+    .main-wrapper.expanded .language-control { flex-basis: auto; margin-bottom: 0; }
+    .video-list-section { box-sizing: border-box; width: 100%; }
+}
+
+html[dir="rtl"] .history-dropdown { text-align: start; }
+html[dir="rtl"] .history-list { text-align: start; }
+html[dir="rtl"] .range-wrapper { direction: ltr; }
+.time-box, .speed-badge, .speed-input-edit { direction: ltr; }
+html[dir="rtl"] .home-link { unicode-bidi: plaintext; }
+.time-box { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 4px; }
+.time-box [data-i18n] { font-size: 0.55em; margin-inline-end: 6px; }
+.home-link { overflow-wrap: anywhere; }
+
+.time-part { display: inline-flex; align-items: baseline; gap: 3px; }
+.input-section, .result-section { min-width: 0; }
+.meta-info, .finish-info { flex-wrap: wrap; }
