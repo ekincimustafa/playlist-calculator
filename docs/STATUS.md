@@ -1,5 +1,13 @@
 # Proje durumu
 
+## Sol alt küre simgeli dil menüsü — 27 Kasım 2026
+
+- Kullanıcının tasarım düzeltmesi doğrultusunda üstteki etiket/native seçim alanı kaldırıldı. Dil seçimi fiziksel sol altta sabit, yalnızca küre simgeli 48 px yuvarlak düğmeye taşındı.
+- Siyah zemin, kırmızı hover/açık durum, gölge ve hafif yükselme hareketi Eklenti/Geçmiş kontrolleriyle eşleştirildi. Düğmeden yukarı doğru açılan beyaz panelde diller kendi adlarıyla ve seçili tercih tikle gösteriliyor. Hareket azaltma tercihi destekleniyor.
+- Düğmenin çevrilmiş erişilebilir adı/title bilgisi, açık/kapalı durumu ve panel ilişkisi var. Panel seçimden, dış tıklamadan, odak dışarı taşındığında veya Escape ile kapanıyor. Yukarı/aşağı/Home/End tuşlarıyla seçeneklere erişilebiliyor. Seçim/Escape sonrası odak düğmeye dönüyor.
+- Tarayıcı diliyle otomatik seçim, tercih kaydı, sekiz çeviri ve RTL/LTR davranışı korunuyor. Yeni hesaplama isteği yok; backend ve eklenti paketi değişmedi. Web varlık sürümü `20261127-globe` olarak güncellendi.
+- Güncellenen mevcut frontend kontrolleri **50/50 başarılı**; `node --check i18n.js` başarılı. Gerçek YouTube kotası kullanılmadı. Yayın yetkisi mevcut görevin devamından geliyor; CI ardından Pages yayını ve canlı menü kontrolü yapılacak.
+
 ## Web sitesinde sekiz dil desteği — 27 Kasım 2026
 
 - Kullanıcı yeni geliştirmeyi tamamlama ve testlerden sonra yayınlama yetkisi verdi; önceliği ziyaretçi dağılımına uygun çoklu dil desteği olarak belirledi. Dal: `codex/website-languages`; taban main: `4ff3a869adaafec2343e96d819784cc314839fd4`.

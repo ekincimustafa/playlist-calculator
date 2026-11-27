@@ -11,7 +11,8 @@ function page({ languages = ['en-US'], saved, blocked = false } = {}) {
     const alerts = [];
     function element(attributes = {}) {
         return {
-            attributes, dataset: { i18n: attributes['data-i18n'] }, listeners: {}, value: '',
+            attributes, dataset: { i18n: attributes['data-i18n'], language: attributes['data-language'] }, listeners: {}, hidden: true,
+            focus() { document.activeElement = this; },
             set innerHTML(_) { throw new Error('Translations must not use HTML parsing'); },
             getAttribute(name) { return this.attributes[name]; },
             setAttribute(name, value) { this.attributes[name] = value; },
@@ -20,12 +21,16 @@ function page({ languages = ['en-US'], saved, blocked = false } = {}) {
     }
     const heading = element({ 'data-i18n': 'headingRest' });
     const input = element({ 'data-i18n-placeholder': 'placeholder', 'data-i18n-aria-label': 'urlLabel' });
-    const select = element();
+    const toggle = element();
+    const menu = element();
+    const control = element();
+    const choices = ['auto', 'en', 'tr', 'es', 'pt', 'hi', 'ur', 'zh-Hant', 'ar'].map(language => element({ 'data-language': language }));
+    control.contains = target => [toggle, menu, ...choices].includes(target);
     const privacy = element();
     const document = {
         documentElement: {},
-        querySelectorAll: selector => [heading, input].filter(el => Object.hasOwn(el.attributes, selector.slice(1, -1))),
-        getElementById: id => ({ languageSelect: select, privacyLink: privacy })[id]
+        querySelectorAll: selector => selector === '[data-language]' ? choices : [heading, input].filter(el => Object.hasOwn(el.attributes, selector.slice(1, -1))),
+        getElementById: id => ({ languageToggle: toggle, languageMenu: menu, languageControl: control, privacyLink: privacy })[id]
     };
     const window = { dispatchEvent: event => events.push(event.type) };
     const context = vm.createContext({ document, window, navigator: { languages }, Event, alert: text => alerts.push(text), localStorage: {
@@ -35,7 +40,13 @@ function page({ languages = ['en-US'], saved, blocked = false } = {}) {
     } });
     vm.runInContext(source, context);
     return { document, window, heading, input, events, alerts, storage,
-        change: value => select.listeners.change({ target: { value } }),
+        change: value => {
+            const choice = choices.find(choice => choice.dataset.language === value) || choices[0];
+            const oldValue = choice.dataset.language;
+            choice.dataset.language = value;
+            choice.listeners.click();
+            choice.dataset.language = oldValue;
+        },
         privacy: () => privacy.listeners.click({ preventDefault() {} }) };
 }
 
@@ -86,7 +97,7 @@ test('all language catalogs contain matching nonempty keys and interpolation pla
     for (const [, key] of html.matchAll(/data-i18n(?:-(?:placeholder|title|aria-label|content))?="([^"]+)"/g)) {
         assert.ok(keys.includes(key), `Missing HTML translation: ${key}`);
     }
-    for (const [, language] of html.matchAll(/<option value="([^"]+)"/g)) {
+    for (const [, language] of html.matchAll(/data-language="([^"]+)"/g)) {
         assert.ok(language === 'auto' || Object.hasOwn(window.catalogs, language), `Missing selectable language: ${language}`);
     }
     const placeholders = text => (text.match(/\{\w+\}/g) || []).sort();
