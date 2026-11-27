@@ -9,15 +9,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css?v=20261127-globe">
+    <link rel="stylesheet" href="style.css">
 
-    <meta name="description" data-i18n-content="metaDescription" content="Calculate the total duration of any YouTube playlist instantly. See how long it takes to watch at 1.25x, 1.5x, 2x speeds. Free tool for students.">
+    <meta name="description" content="Calculate the total duration of any YouTube playlist instantly. See how long it takes to watch at 1.25x, 1.5x, 2x speeds. Free tool for students.">
     <meta name="keywords" content="youtube playlist length calculator, youtube duration, playlist time, study tool, playlist timer, youtube süre hesaplayıcı">
     <meta name="author" content="Mustafa Ekinci">
     <meta name="robots" content="index, follow">
 
-    <meta property="og:title" data-i18n-content="pageTitle" content="YouTube Playlist Length Calculator">
-    <meta property="og:description" data-i18n-content="metaDescription" content="Wondering how long that playlist is? Calculate total duration and custom speeds instantly.">
+    <meta property="og:title" content="YouTube Playlist Length Calculator">
+    <meta property="og:description" content="Wondering how long that playlist is? Calculate total duration and custom speeds instantly.">
     <meta property="og:url" content="https://ytplaylistcalculator.com">
     <meta property="og:type" content="website">
 
@@ -38,29 +38,29 @@
     <link rel="icon" href="favicon.png" sizes="48x48" type="image/png">
     
     <link rel="apple-touch-icon" href="extension/128x128.png">    
-    <script src="i18n.js?v=20261127-globe" defer></script>
     <script src="extension/calculation-request.js" defer></script>
-    <script src="script.js?v=20261127-globe" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
 
     <main class="main-wrapper" id="mainWrapper">
+        
         <div class="history-wrapper">
             <button id="historyToggleBtn" class="history-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                <span data-i18n="history">History</span>
+                <span>History</span>
             </button>
             
             <div id="historyDropdown" class="history-dropdown">
                 <div class="dropdown-header">
-                    <span data-i18n="recent">Recent Calculations</span>
-                    <span id="clearHistoryBtn" class="clear-btn" data-i18n="clear">Clear</span>
+                    Recent Calculations
+                    <span id="clearHistoryBtn" class="clear-btn">Clear</span>
                 </div>
                 <ul id="historyList" class="history-list">
-                    <li class="empty-history" data-i18n="noHistory">No recent history.</li>
+                    <li class="empty-history">No recent history.</li>
                 </ul>
             </div>
         </div>
@@ -69,22 +69,22 @@
             <header>
                 <h1>
                     <a href="." class="home-link">
-                        <span class="highlight" data-i18n="headingLead">Play</span><span data-i18n="headingRest">list Length Calculator</span>
+                        <span class="highlight">Play</span>list Length Calculator
                     </a>
                 </h1>
                 <div class="separator"></div>
-                <p data-i18n="description">Find out the total length of any YouTube playlist instantly.</p>
+                <p>Find out the total length of any YouTube playlist instantly.</p>
             </header>
 
             <div class="card input-card">
                 <div class="input-group">
-                    <input type="text" id="playlistUrl" dir="ltr" data-i18n-placeholder="placeholder" data-i18n-aria-label="urlLabel" aria-label="YouTube playlist or video link" placeholder="Paste YouTube playlist link here..." autocomplete="off">
+                    <input type="text" id="playlistUrl" placeholder="Paste YouTube playlist link here..." autocomplete="off">
                 </div>
 
                 <div class="speed-control">
                     <div class="label-row">
-                        <label for="speedRange" data-i18n="speed">Playback Speed</label>
-                        <span id="speedValue" class="speed-badge" data-i18n-title="customSpeed" title="Click to set custom speed">
+                        <label for="speedRange">Playback Speed</label>
+                        <span id="speedValue" class="speed-badge" title="Click to set custom speed">
                             1.00x 
                             <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -110,8 +110,8 @@
                     </div>
                 </div>
 
-                <button id="calcBtn" data-i18n="calculate">Calculate Duration</button>
-                <button id="cancelCalculationBtn" class="cancel-calculation" type="button" data-i18n="cancel" hidden>Cancel</button>
+                <button id="calcBtn">Calculate Duration</button>
+                <button id="cancelCalculationBtn" class="cancel-calculation" type="button" hidden>Cancel</button>
                 <p id="calculationStatus" class="calculation-status" role="status" aria-live="polite" aria-atomic="true"></p>
             </div>
         </div>
@@ -123,21 +123,21 @@
             </div>
 
             <div class="result-card">
-                <h2 data-i18n="total">Total Duration</h2>
+                <h2>Total Duration</h2>
                 <div class="time-box">
-                    <span class="time-part"><span id="hours">00</span><span data-i18n="hoursUnit">h</span></span> 
-                    <span class="time-part"><span id="minutes">00</span><span data-i18n="minutesUnit">m</span></span> 
-                    <span class="time-part"><span id="seconds">00</span><span data-i18n="secondsUnit">s</span></span>
+                    <span id="hours">00</span>h 
+                    <span id="minutes">00</span>m 
+                    <span id="seconds">00</span>s
                 </div>
                 
                 <div class="meta-info">
-                    <p class="video-count"><span data-i18n="videos">Videos:</span> <span id="videoCount">--</span></p>
+                    <p class="video-count">Videos: <span id="videoCount">--</span></p>
                     <div class="vertical-line"></div> 
-                    <p class="avg-time"><span data-i18n="average">Avg:</span> <span id="avgVideo">--</span></p>
+                    <p class="avg-time">Avg: <span id="avgVideo">--</span></p>
                 </div>
 
                 <div class="finish-info">
-                    <span class="finish-label" data-i18n="finish">🏁 Finish At:</span>
+                    <span class="finish-label">🏁 Finish At:</span>
                     <span id="finishTime">--:--</span>
                 </div>
                 
@@ -146,7 +146,7 @@
 
         <div class="video-list-section" id="videoListSection">
             <div class="list-toggle" id="listToggle">
-                <span class="toggle-text" data-i18n="manage">Manage Videos (Select/Deselect)</span>
+                <span class="toggle-text">Manage Videos (Select/Deselect)</span>
                 <span class="toggle-icon">▼</span>
             </div>
 
@@ -164,34 +164,15 @@
             </div>
         </div>
     </main>
-    <div class="language-control" id="languageControl">
-        <button type="button" class="language-btn" id="languageToggle" aria-label="Language" title="Language" data-i18n-aria-label="language" data-i18n-title="language" aria-expanded="false" aria-controls="languageMenu" aria-haspopup="dialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M3 12h18M12 3a17 17 0 0 1 0 18 17 17 0 0 1 0-18Z"/>
-            </svg>
-        </button>
-        <div class="language-menu" id="languageMenu" role="dialog" aria-label="Language" data-i18n-aria-label="language" hidden>
-            <button type="button" class="language-choice" data-language="auto" aria-pressed="false"><span data-i18n="automatic">Automatic</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="en" aria-pressed="false"><span lang="en" dir="auto">English</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="tr" aria-pressed="false"><span lang="tr" dir="auto">Türkçe</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="es" aria-pressed="false"><span lang="es" dir="auto">Español</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="pt" aria-pressed="false"><span lang="pt" dir="auto">Português</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="hi" aria-pressed="false"><span lang="hi" dir="auto">हिन्दी</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="ur" aria-pressed="false"><span lang="ur" dir="auto">اردو</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="zh-Hant" aria-pressed="false"><span lang="zh-Hant" dir="auto">繁體中文</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-            <button type="button" class="language-choice" data-language="ar" aria-pressed="false"><span lang="ar" dir="auto">العربية</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-        </div>
-    </div>
     <footer class="site-footer">
         <div class="footer-content">
             <p class="copyright">
-                © 2026 <strong>ytplaylistcalculator</strong>. <span data-i18n="rights">All rights reserved.</span>
+                © 2026 <strong>ytplaylistcalculator</strong>. All rights reserved.
             </p>
             
             <div class="footer-links">
                 <span class="built-by">
-                    <span data-i18n="builtBy">Built by</span> <a href="https://www.linkedin.com/in/ekincimustafa/" target="_blank" rel="noopener">Mustafa Ekinci</a>
+                    Built by <a href="https://www.linkedin.com/in/ekincimustafa/" target="_blank" rel="noopener">Mustafa Ekinci</a>
                 </span>
                 
                 <span class="separator-dot">•</span>
@@ -200,21 +181,21 @@
                     <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                     </svg>
-                    <span data-i18n="source">Source Code</span>
+                    Source Code
                 </a>
                 
                 <span class="separator-dot">•</span>
 
-                <a href="#" id="privacyLink" class="privacy-link" data-i18n="privacy">Privacy</a>
+                <a href="#" class="privacy-link" onclick="alert('Privacy: Recent calculation history is saved in this browser; use History > Clear to remove it. Video and playlist IDs are sent to our backend and YouTube to fetch metadata. Successful metadata may be cached in server memory for up to 5 minutes. This website uses Google Analytics and loads Google/YouTube content, including fonts, thumbnails and embedded videos. These services and our hosting providers receive connection information such as your IP address and browser information. Google services are subject to https://policies.google.com/privacy.')">Privacy</a>
             </div>
         </div>
     </footer>
 
-    <a href="https://chromewebstore.google.com/detail/ecdjlbdgjnlmjhmdllgnfakocdcpaieg" id="extensionPromoBtn" data-i18n-title="extensionTitle" class="extension-promo" target="_blank" title="Download our Chrome Extension">
+    <a href="https://chromewebstore.google.com/detail/ecdjlbdgjnlmjhmdllgnfakocdcpaieg" id="extensionPromoBtn" class="extension-promo" target="_blank" title="Download our Chrome Extension">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2a2 2 0 0 1 2 2v1h5a2 2 0 0 1 2 2v5h-1a2 2 0 0 0 0 4h1v5a2 2 0 0 1-2 2h-5v-1a2 2 0 0 0-4 0v1H5a2 2 0 0 1-2-2v-5h1a2 2 0 0 0 0-4H3V7a2 2 0 0 1 2-2h5V4a2 2 0 0 1 2-2z"></path>
             </svg>
-            <span data-i18n="extension">Extension</span>
+            <span>Extension</span>
         </a>
 </body>
 </html>
