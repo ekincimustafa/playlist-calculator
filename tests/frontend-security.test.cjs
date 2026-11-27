@@ -56,6 +56,16 @@ class Element {
     appendChild(child) { this.children.push(child); return child; }
     append(...children) { this.children.push(...children); }
     replaceChildren(...children) { this._text = ''; this.children = children; }
+    querySelector(selector) {
+        assert.equal(selector, 'input');
+        return this.children.find(child => child.tagName === 'input') || null;
+    }
+    focus() { this.ownerDocument.activeElement = this; }
+    blur() {
+        if (this.ownerDocument.activeElement !== this) return;
+        this.ownerDocument.activeElement = null;
+        for (const callback of this.listeners.get('blur') || []) callback.call(this);
+    }
     addEventListener(name, callback) {
         const callbacks = this.listeners.get(name) || [];
         callbacks.push(callback);
@@ -89,9 +99,18 @@ function app(kind, options = {}) {
         if (!elements.has(id)) {
             const element = new Element();
             element.id = id;
+            element.ownerDocument = document;
             elements.set(id, element);
         }
         return elements.get(id);
+    };
+    const document = {
+        activeElement: null,
+        getElementById: get,
+        createElement: tag => Object.assign(new Element(tag), { ownerDocument: document }),
+        addEventListener: (name, callback) => {
+            if (name === 'DOMContentLoaded') ready.push(callback);
+        }
     };
     Object.assign(get('speedRange'), { type: 'range', min: '1', max: '5', value: '1' });
     const context = vm.createContext({
@@ -101,13 +120,7 @@ function app(kind, options = {}) {
         window: { addEventListener: (name, callback) => windowListeners.set(name, callback) },
         console: { error: options.onError || (error => { throw error; }) },
         alert: value => alerts.push(value),
-        document: {
-            getElementById: get,
-            createElement: tag => new Element(tag),
-            addEventListener: (name, callback) => {
-                if (name === 'DOMContentLoaded') ready.push(callback);
-            }
-        },
+        document,
         localStorage: {
             getItem: key => storage.get(key) ?? null,
             setItem: (key, value) => storage.set(key, value),
@@ -432,6 +445,53 @@ test('custom speed bounds remain 0.25x through 5x with a 1x invalid-value fallba
     for (const [input, expected] of [[-1, 0.25], [9, 5], ['invalid', 1], [1.37, 1.37]]) {
         a.run(`updateCustomSpeed(${JSON.stringify(input)})`);
         assert.equal(a.get('speedValue').innerText, expected.toFixed(2) + 'x');
+    }
+});
+
+for (const event of ['touchstart', 'mousedown']) {
+    test(`web: ${event} on the slider dismisses URL entry and keeps speed calculation working`, async () => {
+        const a = app('web');
+        a.get('playlistUrl').value = 'https://www.youtube.com/playlist?list=PLtest123';
+        await a.get('calcBtn').click();
+        a.get('playlistUrl').focus();
+        await a.get('speedRange').dispatch(event);
+        assert.equal(a.run('document.activeElement'), null);
+        assert.equal(a.get('playlistUrl').value, 'https://www.youtube.com/playlist?list=PLtest123');
+        assert.equal(a.get('speedValue').querySelector('input'), null);
+        a.get('speedRange').value = '2';
+        await a.get('speedRange').dispatch('input');
+        assert.equal(a.get('minutes').innerText, '7');
+        assert.equal(a.get('seconds').innerText, '30');
+    });
+}
+
+test('web: switching from custom speed entry to dragging commits the edit and restores quarter steps', async () => {
+    const a = app('web');
+    await a.get('speedValue').click();
+    const editor = a.get('speedValue').querySelector('input');
+    assert.equal(a.run('document.activeElement'), editor);
+    editor.value = '1.37';
+    await a.get('speedRange').dispatch('touchstart');
+    assert.equal(a.run('document.activeElement'), null);
+    assert.equal(a.get('speedValue').querySelector('input'), null);
+    assert.equal(a.run('playbackSpeed'), 1.37);
+    assert.equal(a.get('speedRange').step, '0.25');
+    await a.get('speedRange').dispatch('mousedown');
+    a.get('speedRange').value = '2.25';
+    await a.get('speedRange').dispatch('input');
+    assert.equal(a.run('playbackSpeed'), 2.25);
+    await a.get('speedValue').click();
+    const nextEditor = a.get('speedValue').querySelector('input');
+    assert.equal(nextEditor.value, '2.25');
+    assert.equal(a.run('document.activeElement'), nextEditor);
+});
+
+test('web: slider interaction preserves focus on non-text controls', async () => {
+    const a = app('web');
+    for (const id of ['speedRange', 'calcBtn']) {
+        a.get(id).focus();
+        await a.get('speedRange').dispatch('touchstart');
+        assert.equal(a.run('document.activeElement'), a.get(id));
     }
 });
 

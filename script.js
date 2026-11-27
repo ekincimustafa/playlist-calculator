@@ -57,9 +57,17 @@ speedInput.addEventListener('input', function() {
     }
 });
 
-function enableSnapMode() { speedInput.step = '0.25'; }
+function enableSnapMode() {
+    const activeInput = document.activeElement;
+    // Dismiss text entry before dragging, without blurring the native slider.
+    if (activeInput && (activeInput === urlInput || activeInput === speedValue.querySelector('input'))) {
+        activeInput.blur();
+    }
+    // Blurring the custom editor commits its value and changes step to 0.01.
+    speedInput.step = '0.25';
+}
 speedInput.addEventListener('mousedown', enableSnapMode); 
-speedInput.addEventListener('touchstart', enableSnapMode); 
+speedInput.addEventListener('touchstart', enableSnapMode, { passive: true });
 
 /**
  * Main Controller
