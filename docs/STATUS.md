@@ -1,5 +1,18 @@
 # Proje durumu
 
+## Trafik ve marka çalışmaları yeniden başladı; ilk SEO paketi — 27 Kasım 2026
+
+- Kullanıcı bu sohbette trafik/marka geliştirme planını başlatmayı onayladı. Bu kapsam önceki genel durdurma kararını kaldırır; çoklu dil paketini geri getirme, main'e birleştirme veya canlı yayın yetkisi verilmedi.
+- Güncel main `347436923984342b00b2bbed93b50c147e8e1619` taban alındı; mobil hız barı düzeltmesi PR #18 bu tabanda mevcut. Önceki dil yayını kayıtları tarihsel durumdur; dil paketi kaldırılmış durumda.
+- İlk küçük paket: YouTube ve mevcut marka adını içeren sayfa başlığı; özelliklerle tutarlı açıklama; canonical ana adres; aynı URL/başlık/açıklamayı kullanan Open Graph ve Twitter bilgileri; mevcut site adını bildiren WebSite JSON-LD.
+- Hesaplayıcının gövde HTML'i ve çalıştırılabilir script etiketleri başlangıç sürümüyle aynı. CSS, hesaplama JavaScript'i, backend, eklenti, Analytics davranışı ve site haritası değiştirilmedi.
+- `node --test tests/*.test.cjs`: **42/42 başarılı**. `python -m unittest discover -s backend/tests -v`: **48/48 başarılı**. Backend ilk koşusu ortamda requests olmadığı için başlayamadı; mevcut requirements-dev kurulumu sonrası bütün testler geçti. Bağımlılık dosyaları değiştirilmedi ve gerçek YouTube kotası kullanılmadı.
+- Python HTMLParser/JSON/XML ile 14 yapısal doğrulama geçti: gövde ve çalıştırılabilir scriptlerin korunması; doğrulama/robots bilgilerinin korunması; başlık/açıklama tutarlılığı; canonical, JSON-LD, CNAME ve sitemap URL eşleşmesi.
+- Yeni [büyüme planı](GROWTH_PLAN.md), Search Console verisi, öncelik seçimi, hesaplama başarısı ölçümü ve sonraki içerik/marka adımlarını içerir. Yol haritasındaki durdurma/dil paketi durumu güncellendi.
+- Özel Search Console/Analytics verilerine erişim yok; son üç aylık toplamlar, sorgular ve ülkeler kullanıcıdan istendi. Sıralama/trafik artışı, Google'ın seçeceği site adı, gerçek telefon ve sosyal paylaşım önizlemesi doğrulanmış sayılmaz.
+- Çalışma ayrı PR olarak incelemeye hazırlanıyor. Main ve canlı yayın değiştirilmedi.
+
+
 ## Sol alt küre simgeli dil menüsü — 27 Kasım 2026
 
 - Kullanıcının tasarım düzeltmesi doğrultusunda üstteki etiket/native seçim alanı kaldırıldı. Dil seçimi fiziksel sol altta sabit, yalnızca küre simgeli 48 px yuvarlak düğmeye taşındı.
