@@ -1,5 +1,7 @@
 > **27 Kasım 2026: Geliştirmeler kullanıcı talebiyle durduruldu.** Son çoklu dil güncellemeleri (#14–#16) geri alındı. Kullanıcı yeniden başlatmadan bu listedeki işlere devam edilmeyecek. Aşağıdaki liste tarihsel planı gösterir.
 
+> **Aynı gün verilen dar kapsamlı istisna:** Kullanıcı mobil hız barında klavye açılması için küçük bir düzeltmenin denenmesini istedi. Yalnızca bu düzeltme ve testleri hazırlanıyor; diğer geliştirmeler durdurulmuş durumda. Canlı yayın bu deneme kapsamında yapılmadı.
+
 # Yol haritası
 
 1. **Hesaplama doğruluğu ve web/eklenti tutarlılığı — tamamlandı.** Üst üste istek, özgün playlist konumları ve index davranışı PR #6/#7/#11 ile düzeltildi.
